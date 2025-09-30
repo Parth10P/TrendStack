@@ -1,28 +1,25 @@
 import * as React from 'react';
 import { BottomNavigation, Text } from 'react-native-paper';
 
-const MusicRoute = () => <Text>Music</Text>;
+const HomeRoute = () => <Text>Home</Text>;
+const CategoriesRoute = () => <Text>Categories</Text>;
+const ExploreRoute = () => <Text>Explore</Text>;
+const SavedRoute = () => <Text>Saved</Text>;
 
-const AlbumsRoute = () => <Text>Albums</Text>;
-
-const RecentsRoute = () => <Text>Recents</Text>;
-
-const NotificationsRoute = () => <Text>Notifications</Text>;
-
-const Home = () => {
+const MyComponent = () => {
   const [index, setIndex] = React.useState(0);
   const [routes] = React.useState([
-    { key: 'music', title: 'Favorites', focusedIcon: 'heart', unfocusedIcon: 'heart-outline'},
-    { key: 'albums', title: 'Albums', focusedIcon: 'album' },
-    { key: 'recents', title: 'Recents', focusedIcon: 'history' },
-    { key: 'notifications', title: 'Notifications', focusedIcon: 'bell', unfocusedIcon: 'bell-outline' },
+    { key: 'home', title: 'Home', focusedIcon: 'home', unfocusedIcon: 'home-outline' },
+    { key: 'categories', title: 'Categories', focusedIcon: 'apps' },
+    { key: 'explore', title: 'Explore', focusedIcon: 'magnify' },
+    { key: 'saved', title: 'Saved', focusedIcon: 'bookmark', unfocusedIcon: 'bookmark-outline' },
   ]);
 
   const renderScene = BottomNavigation.SceneMap({
-    music: MusicRoute,
-    albums: AlbumsRoute,
-    recents: RecentsRoute,
-    notifications: NotificationsRoute,
+    home: HomeRoute,
+    categories: CategoriesRoute,
+    explore: ExploreRoute,
+    saved: SavedRoute,
   });
 
   return (
@@ -34,5 +31,4 @@ const Home = () => {
   );
 };
 
-export default Home;
-
+export default MyComponent;

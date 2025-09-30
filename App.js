@@ -4,15 +4,17 @@ import Login from "./src/screens/Login";
 import GoogleAuth from "./src/screens/GoogleAuth";
 import { PaperProvider } from "react-native-paper";
 import Home from "./src/screens/Home";
+import { SafeAreaView } from "react-native";
 
 export default function App() {
   return (
-    <PaperProvider>
-      <View style={styles.container}>
-        <StatusBar style="auto" />
-        <Home />
-      </View>
-    </PaperProvider>
+      <PaperProvider>
+        <SafeAreaView style={styles.container}>
+          <StatusBar style="auto" />
+          <Home />
+        </SafeAreaView>
+      </PaperProvider>
+  
   );
 }
 
