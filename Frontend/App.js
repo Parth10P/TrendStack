@@ -14,6 +14,7 @@ export default function App() {
           <Home />
         </SafeAreaView>
       </PaperProvider>
+      
   
   );
 }

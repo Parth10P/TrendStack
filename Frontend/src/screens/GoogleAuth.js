@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Text, View, StyleSheet, Button,Image } from "react-native";
 import {
   GoogleSignin,
+  GoogleSigninButton,
   User,
   isSuccessResponse,
 } from "@react-native-google-signin/google-signin";
@@ -35,7 +36,7 @@ const GoogleAuth = () => {
           <Text>{auth.user.email}</Text>
         </View>
       ) : (
-        <Button title="login" onPress={handleGoogleSignin} />
+        <GoogleSigninButton lable="login" onPress={handleGoogleSignin} />
       )}
     </View>
   );
