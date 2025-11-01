@@ -9,6 +9,8 @@
   "author": "Phantom",
   "license": "ISC",
   "dependencies": {
-    "express": "^5.1.0"
+    "@prisma/client": "^6.18.0",
+    "express": "^5.1.0",
+    "prisma": "^6.18.0"
   }
 }

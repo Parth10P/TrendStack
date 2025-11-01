@@ -1,0 +1,101 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  // default output (node_modules/.prisma/client) will be used so @prisma/client
+  // can be imported normally. Remove `output` unless you need a custom path.
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Models for TrendStack app: users, profiles, posts, comments, likes
+
+model User {
+  id         Int       @id @default(autoincrement())
+  username   String    @unique
+  email      String    @unique
+  password   String?   // null for OAuth users
+  provider   String?   // e.g. "google" or "local"
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  profile    Profile?
+  posts      Post[]
+  comments   Comment[]
+  likes      Like[]
+
+  @@map("users")
+}
+
+model Profile {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int      @unique
+  name      String?
+  bio       String?
+  avatarUrl String?
+  phone     String?
+  location  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("profiles")
+}
+
+model Post {
+  id          Int      @id @default(autoincrement())
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId    Int
+  content     String   @db.Text
+  // optional JSON field for images/media; MySQL supports JSON
+  attachments Json?
+  likeCount   Int      @default(0)
+  commentCount Int     @default(0)
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  comments    Comment[]
+  likes       Like[]
+
+  @@index([createdAt])
+  @@map("posts")
+}
+
+model Comment {
+  id         Int      @id @default(autoincrement())
+  post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId     Int
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId   Int
+  content    String   @db.Text
+  parentId   Int?
+  parent     Comment? @relation("CommentToComment", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    Comment[] @relation("CommentToComment")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([postId])
+  @@map("comments")
+}
+
+model Like {
+  id        Int      @id @default(autoincrement())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+  @@index([userId])
+  @@map("likes")
+}
+
