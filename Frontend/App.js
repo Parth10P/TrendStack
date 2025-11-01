@@ -1,11 +1,9 @@
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View } from "react-native";
-import { useState } from "react";
+import { StyleSheet } from "react-native";
+import React, { useState } from "react";
+import { Provider as PaperProvider } from "react-native-paper";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import Login from "./src/screens/Login";
-import GoogleAuth from "./src/screens/GoogleAuth";
-import { PaperProvider } from "react-native-paper";
-import Home from "./src/screens/Home";
-import { SafeAreaView } from "react-native";
 
 export default function App() {
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -15,22 +13,20 @@ export default function App() {
   };
 
   return (
-    <PaperProvider>
-      <SafeAreaView style={styles.container}>
-        <StatusBar style="auto" />
-        {isSignedIn ? (
-          <Home />
-        ) : (
-          <GoogleAuth onSignInSuccess={handleSignInSuccess} />
-        )}
-      </SafeAreaView>
-    </PaperProvider>
+    <SafeAreaProvider>
+      <PaperProvider>
+        <SafeAreaView style={styles.container}>
+          <StatusBar style="auto" />
+          <Login onSignInSuccess={handleSignInSuccess} />
+        </SafeAreaView>
+      </PaperProvider>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#f6f7fb",
   },
 });

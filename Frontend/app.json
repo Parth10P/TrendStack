@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "TrendStack",
-    "slug": "TrendStack",
+    "name": "trend_stack",
+    "slug": "trend_stack",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -12,21 +12,10 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "plugins": [
-      [
-        "@react-native-google-signin/google-signin",
-        {
-          "iosUrlScheme": "com.googleusercontent.apps.597436326919-1e131906c87e6dkkesmcee2sdgta90lb"
-        }
-      ]
-    ],
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifire": "com.TrendStack.ios",
-      "bundleIdentifier": "com.TrendStack.android"
+      "supportsTablet": true
     },
     "android": {
-      "package": "com.TrendStack.android",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
