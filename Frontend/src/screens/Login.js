@@ -9,7 +9,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  ActivityIndicator,
 } from "react-native";
+import { userAPI } from "../services/api";
 
 // Note: @react-native-google-signin/google-signin is native and may not be
 // available in an Expo managed workflow. For now we use a simple placeholder
@@ -23,39 +25,105 @@ export default function Login({ onSignInSuccess }) {
   const [password, setPassword] = useState("");
   // Sign up fields
   const [name, setName] = useState("");
+  const [signUpUsername, setSignUpUsername] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [signUpPassword, setSignUpPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   // (optional) you can check persisted auth state here
 
-  function handleLocalSignIn() {
-    // Very small demo logic: require non-empty username/password
+  async function handleLocalSignIn() {
+    // Validation
     if (!username.trim() || !password) {
       Alert.alert("Validation", "Please enter username and password");
       return;
     }
 
-    // Simulate sign-in success. In real app, call your auth API here.
-    const user = { username };
-    if (onSignInSuccess) onSignInSuccess(user);
+    try {
+      setLoading(true);
+      const response = await userAPI.login({
+        username: username.trim(),
+        password,
+      });
+
+      // Clear form fields
+      setUsername("");
+      setPassword("");
+
+      // Success - pass user data to callback
+      if (onSignInSuccess) {
+        onSignInSuccess(response.user || response);
+      }
+    } catch (error) {
+      Alert.alert("Login Failed", error.message || "Invalid credentials");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function handleSignUp() {
+  async function handleSignUp() {
     // Basic validation
-    if (!name.trim() || !email.trim() || !phone.trim() || !signUpPassword) {
+    if (
+      !name.trim() ||
+      !signUpUsername.trim() ||
+      !email.trim() ||
+      !signUpPassword
+    ) {
       Alert.alert("Validation", "Please fill all sign up fields");
       return;
     }
 
-    // Very small demo: create a user object and call success callback
-    const newUser = { name, email, phone };
-    if (onSignInSuccess) onSignInSuccess(newUser);
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      Alert.alert("Validation", "Please enter a valid email address");
+      return;
+    }
+
+    // Password validation (minimum 6 characters)
+    if (signUpPassword.length < 6) {
+      Alert.alert("Validation", "Password must be at least 6 characters");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await userAPI.signup({
+        name: name.trim(),
+        username: signUpUsername.trim(),
+        email: email.trim(),
+        password: signUpPassword,
+      });
+
+      // Clear form fields
+      setName("");
+      setSignUpUsername("");
+      setEmail("");
+      setSignUpPassword("");
+
+      // Success - pass user data to callback
+      Alert.alert("Success", "Account created successfully!", [
+        {
+          text: "OK",
+          onPress: () => {
+            if (onSignInSuccess) {
+              onSignInSuccess(response.user || response);
+            }
+          },
+        },
+      ]);
+    } catch (error) {
+      Alert.alert(
+        "Sign Up Failed",
+        error.message || "Unable to create account"
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleGoogleSignIn() {
-    console.log(" google login")
+    console.log(" google login");
     // Placeholder implementation: simulate a successful Google sign-in.
     // Replace this with a real implementation using `expo-auth-session`
     // or `@react-native-google-signin/google-signin` (native) as desired.
@@ -115,6 +183,16 @@ export default function Login({ onSignInSuccess }) {
               onChangeText={setName}
             />
 
+            <Text style={styles.label}>Username</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="johndoe"
+              value={signUpUsername}
+              onChangeText={setSignUpUsername}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+
             <Text style={styles.label}>Email Address</Text>
             <TextInput
               style={styles.input}
@@ -123,15 +201,6 @@ export default function Login({ onSignInSuccess }) {
               autoCapitalize="none"
               value={email}
               onChangeText={setEmail}
-            />
-
-            <Text style={styles.label}>Phone Number</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="+1 (555) 123-4567"
-              keyboardType="phone-pad"
-              value={phone}
-              onChangeText={setPhone}
             />
 
             <Text style={styles.label}>Password</Text>
@@ -144,10 +213,18 @@ export default function Login({ onSignInSuccess }) {
             />
 
             <TouchableOpacity
-              style={styles.primaryButton}
+              style={[
+                styles.primaryButton,
+                loading && styles.primaryButtonDisabled,
+              ]}
               onPress={handleSignUp}
+              disabled={loading}
             >
-              <Text style={styles.primaryButtonText}>Create Account</Text>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.primaryButtonText}>Create Account</Text>
+              )}
             </TouchableOpacity>
           </>
         ) : (
@@ -175,10 +252,18 @@ export default function Login({ onSignInSuccess }) {
             />
 
             <TouchableOpacity
-              style={styles.primaryButton}
+              style={[
+                styles.primaryButton,
+                loading && styles.primaryButtonDisabled,
+              ]}
               onPress={handleLocalSignIn}
+              disabled={loading}
             >
-              <Text style={styles.primaryButtonText}>Login</Text>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.primaryButtonText}>Login</Text>
+              )}
             </TouchableOpacity>
 
             <View style={styles.orRow}>
@@ -267,6 +352,9 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "700",
     fontSize: 16,
+  },
+  primaryButtonDisabled: {
+    opacity: 0.6,
   },
   orText: {
     textAlign: "center",

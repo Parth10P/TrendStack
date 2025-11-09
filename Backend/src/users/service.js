@@ -4,7 +4,7 @@ const bcrypt = require("bcrypt");
 const SALT_ROUNDS = 10;
 
 async function signUp(data) {
-  const { username, email, password } = data;
+  const { name, username, email, password } = data;
 
   const existing = await prisma.user.findFirst({
     where: { OR: [{ email }, { username }] },
@@ -19,7 +19,13 @@ async function signUp(data) {
   const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
   const user = await prisma.user.create({
-    data: { username, email, password: hashedPassword, provider: "local" },
+    data: {
+      name,
+      username,
+      email,
+      password: hashedPassword,
+      provider: "local",
+    },
   });
   return user;
 }
