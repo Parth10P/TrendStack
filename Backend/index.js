@@ -1,18 +1,24 @@
 const express = require("express");
+const cookieParser = require("cookie-parser");
+const { router } = require("./src/users/routes");
 
-// const cookiePar = require("cookie-parser");
-// const bcrypt = require('bcrypt')
-const {router} = require("./src/users/routes");
 const app = express();
 
-// app.use(cookiePar());
-app.use(express.json());
-app.use("/api/users",router);
+// Middleware
+app.use(cookieParser()); // Enable cookie parsing
+app.use(express.json()); // Parse JSON request bodies
+app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
-app.get("/",(req,res) =>{
-  res.send("Trend Stack backend is working")
-})
+// Routes
+app.use("/", router);
 
-app.listen(3000, () => {
-  console.log("http://localhost:3000");
+// Root health check
+app.get("/", (req, res) => {
+  res.send("TrendStack backend is working");
+});
+
+// Start server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
 });
