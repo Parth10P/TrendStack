@@ -1,14 +1,7 @@
 const { prisma } = require("../../db/config");
+const bcrypt = require("bcrypt");
 
-// function hashPassword(pwd) {
-//   return crypto.createHash("sha256").update(pwd).digest("hex");
-// }
-
-// function sanitize(user) {
-//   if (!user) return user;
-//   const { password, ...rest } = user;
-//   return rest;
-// }
+const SALT_ROUNDS = 10;
 
 async function signUp(data) {
   const { username, email, password } = data;
@@ -22,11 +15,13 @@ async function signUp(data) {
     throw err;
   }
 
+  // Hash password with bcrypt
+  const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
   const user = await prisma.user.create({
-    data: { username, email, password: password, provider: "local" },
+    data: { username, email, password: hashedPassword, provider: "local" },
   });
-  return (user);
+  return user;
 }
 
 async function login(data) {
@@ -37,12 +32,15 @@ async function login(data) {
     err.statusCode = 401;
     throw err;
   }
-  if (user.password !== password) {
+
+  // Compare password with bcrypt
+  const isValidPassword = await bcrypt.compare(password, user.password);
+  if (!isValidPassword) {
     const err = new Error("Invalid credentials");
     err.statusCode = 401;
     throw err;
   }
-  return(user);
+  return user;
 }
 
 module.exports = { signUp, login };
