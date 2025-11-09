@@ -8,11 +8,11 @@ function loginMiddleware(req, res, next) {
 }
 
 function signupMiddleware(req, res, next) {
-  const { username, email, password } = req.body;
-  if (!username || !email || !password) {
+  const { name, username, email, password } = req.body;
+  if (!name || !username || !email || !password) {
     return res
       .status(400)
-      .json({ err: "username, email and password are required" });
+      .json({ err: "name, username, email and password are required" });
   }
   next();
 }

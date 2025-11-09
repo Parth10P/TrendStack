@@ -9,8 +9,8 @@ router.post("/login", loginMiddleware, login);
 router.post("/logout", logout);
 
 // Health check
-router.get("/", (req, res) => {
-  res.send("users API ready");
+router.get("/health", (req, res) => {
+  res.json({ message: "users API ready" });
 });
 
 module.exports = { router };

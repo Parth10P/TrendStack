@@ -19,6 +19,7 @@ datasource db {
 
 model User {
   id         Int       @id @default(autoincrement())
+  name       String
   username   String    @unique
   email      String    @unique
   password   String?   // null for OAuth users
