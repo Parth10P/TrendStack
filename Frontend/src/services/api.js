@@ -1,17 +1,18 @@
 // API configuration
 // Change localhost to your IP address if testing on a physical device
-// Example: "http://192.168.1.100:3000/api/users"
-const API_BASE_URL = "http://localhost:3000/api/users";
+// Example: "http://192.168.1.100:3000/api"
+const API_BASE_URL = "http://localhost:3000/api";
 
 // Make API request
-async function apiRequest(endpoint, method, body) {
-  const url = `${API_BASE_URL}${endpoint}`;
+async function apiRequest(basePath, endpoint, method, body) {
+  const url = `${API_BASE_URL}${basePath}${endpoint}`;
 
   const options = {
     method: method,
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include", // Include cookies for authentication
   };
 
   if (body) {
@@ -32,17 +33,30 @@ async function apiRequest(endpoint, method, body) {
 export const userAPI = {
   // Sign up
   async signup(userData) {
-    return apiRequest("/signup", "POST", userData);
+    return apiRequest("/users", "/signup", "POST", userData);
   },
 
   // Login
   async login(credentials) {
-    return apiRequest("/login", "POST", credentials);
+    return apiRequest("/users", "/login", "POST", credentials);
   },
 
   // Logout
   async logout() {
-    return apiRequest("/logout", "POST", null);
+    return apiRequest("/users", "/logout", "POST", null);
+  },
+};
+
+// Post API functions
+export const postAPI = {
+  // Create a new post
+  async createPost(postData) {
+    return apiRequest("/posts", "/", "POST", postData);
+  },
+
+  // Get all posts
+  async getAllPosts() {
+    return apiRequest("/posts", "/", "GET", null);
   },
 };
 
