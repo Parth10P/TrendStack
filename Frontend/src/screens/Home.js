@@ -9,9 +9,11 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { userAPI } from "../services/api";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import CreatePost from "./CreatePost";
 
 export default function Home({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState("Discover");
+  const [showCreatePost, setShowCreatePost] = useState(false);
   const insets = useSafeAreaInsets();
 
   const handleLogout = async () => {
@@ -176,7 +178,10 @@ export default function Home({ user, onLogout }) {
         <TouchableOpacity style={styles.navItem}>
           <Ionicons name="search-outline" size={26} color="#999" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => setShowCreatePost(true)}
+        >
           <View style={styles.addButton}>
             <Ionicons name="add" size={28} color="#fff" />
           </View>
@@ -188,6 +193,16 @@ export default function Home({ user, onLogout }) {
           <Ionicons name="person-add-outline" size={26} color="#999" />
         </TouchableOpacity>
       </View>
+
+      {/* Create Post Modal */}
+      <CreatePost
+        visible={showCreatePost}
+        onClose={() => setShowCreatePost(false)}
+        onPostCreated={() => {
+          // You can add logic here to refresh the posts feed
+          console.log("Post created! Refresh feed here if needed.");
+        }}
+      />
     </View>
   );
 }
