@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ScrollView,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { userAPI } from "../services/api";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -29,11 +30,11 @@ export default function Home({ user, onLogout }) {
 
   // Sample stories data
   const stories = [
-    { id: 1, label: "Your Story", image: "👤" },
-    { id: 2, label: "Story 1", image: "👟" },
-    { id: 3, label: "Story 2", image: "🏃" },
-    { id: 4, label: "Story 3", image: "⚡" },
-    { id: 5, label: "Story 4", image: "💪" },
+    { id: 1, label: "Your Story", icon: "person" },
+    { id: 2, label: "Story 1", icon: "heart-outline" },
+    { id: 3, label: "Story 2", icon: "star-outline" },
+    { id: 4, label: "Story 3", icon: "flash-outline" },
+    { id: 5, label: "Story 4", icon: "trophy-outline" },
   ];
 
   return (
@@ -42,12 +43,16 @@ export default function Home({ user, onLogout }) {
       <View style={[styles.topBar, { paddingTop: insets.top }]}>
         <View style={styles.topBarLeft}>
           <View style={styles.logoContainer}>
-            <Text style={styles.logoIcon}>P</Text> 
+            <Text style={styles.logoIcon}>P</Text>
             {/* trend stack logo above*/}
           </View>
           <Text style={styles.appName}>TRENDSTACK</Text>
         </View>
-        <View style={styles.statusIcons}>{/* profile icon */}</View>
+        <View style={styles.statusIcons}>
+          <TouchableOpacity>
+            <Ionicons name="person-circle-outline" size={28} color="#111" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Navigation Tabs */}
@@ -94,7 +99,7 @@ export default function Home({ user, onLogout }) {
             {stories.map((story) => (
               <View key={story.id} style={styles.storyItem}>
                 <View style={styles.storyCircle}>
-                  <Text style={styles.storyEmoji}>{story.image}</Text>
+                  <Ionicons name={story.icon} size={32} color="#4CAF50" />
                 </View>
                 <Text style={styles.storyLabel}>{story.label}</Text>
               </View>
@@ -107,7 +112,7 @@ export default function Home({ user, onLogout }) {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recently Post</Text>
             <TouchableOpacity>
-              <Text style={styles.moreIcon}>⋯</Text>
+              <Ionicons name="ellipsis-horizontal" size={20} color="#666" />
             </TouchableOpacity>
           </View>
 
@@ -123,10 +128,10 @@ export default function Home({ user, onLogout }) {
               </View>
               <View style={styles.postIcons}>
                 <TouchableOpacity style={styles.postIcon}>
-                  <Text style={styles.iconText}>📷</Text>
+                  <Ionicons name="camera-outline" size={22} color="#666" />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.postIcon}>
-                  <Text style={styles.iconText}>⚙️</Text>
+                  <Ionicons name="settings-outline" size={22} color="#666" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -135,17 +140,17 @@ export default function Home({ user, onLogout }) {
             <View style={styles.imageCardsContainer}>
               <View style={[styles.imageCard, styles.imageCard1]}>
                 <View style={styles.imagePlaceholder}>
-                  <Text style={styles.imageEmoji}>🏃</Text>
+                  <Ionicons name="fitness-outline" size={40} color="#999" />
                 </View>
               </View>
               <View style={[styles.imageCard, styles.imageCard2]}>
                 <View style={styles.imagePlaceholder}>
-                  <Text style={styles.imageEmoji}>⚡</Text>
+                  <Ionicons name="flash-outline" size={40} color="#999" />
                 </View>
               </View>
               <View style={[styles.imageCard, styles.imageCard3]}>
                 <View style={styles.imagePlaceholder}>
-                  <Text style={styles.imageEmoji}>👟</Text>
+                  <Ionicons name="images-outline" size={40} color="#999" />
                 </View>
               </View>
             </View>
@@ -157,7 +162,7 @@ export default function Home({ user, onLogout }) {
           <Text style={styles.sectionTitle}>Featured Blog</Text>
           <View style={styles.featuredCard}>
             <View style={styles.featuredProfile}>
-              <Text style={styles.featuredEmoji}>👤</Text>
+              <Ionicons name="person" size={30} color="#666" />
             </View>
           </View>
         </View>
@@ -166,21 +171,21 @@ export default function Home({ user, onLogout }) {
       {/* Bottom Navigation Bar */}
       <View style={[styles.bottomNav, { paddingBottom: insets.bottom }]}>
         <TouchableOpacity style={styles.navItem}>
-          <Text style={[styles.navIcon, styles.navIconActive]}>🏠</Text>
+          <Ionicons name="home" size={26} color="#4CAF50" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem}>
-          <Text style={styles.navIcon}>🔍</Text>
+          <Ionicons name="search-outline" size={26} color="#999" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem}>
           <View style={styles.addButton}>
-            <Text style={styles.addIcon}>+</Text>
+            <Ionicons name="add" size={28} color="#fff" />
           </View>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem}>
-          <Text style={styles.navIcon}>📷</Text>
+          <Ionicons name="camera-outline" size={26} color="#999" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem}>
-          <Text style={styles.navIcon}>👤+</Text>
+          <Ionicons name="person-add-outline" size={26} color="#999" />
         </TouchableOpacity>
       </View>
     </View>
@@ -294,9 +299,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#4CAF50",
   },
-  storyEmoji: {
-    fontSize: 30,
-  },
   storyLabel: {
     fontSize: 12,
     color: "#666",
@@ -319,10 +321,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: "#111",
-  },
-  moreIcon: {
-    fontSize: 20,
-    color: "#666",
   },
   postCard: {
     backgroundColor: "#f9fafb",
@@ -355,9 +353,6 @@ const styles = StyleSheet.create({
   postIcon: {
     marginBottom: 8,
   },
-  iconText: {
-    fontSize: 18,
-  },
   imageCardsContainer: {
     flexDirection: "row",
     height: 120,
@@ -389,9 +384,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  imageEmoji: {
-    fontSize: 40,
-  },
   featuredSection: {
     backgroundColor: "#fff",
     padding: 16,
@@ -410,9 +402,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  featuredEmoji: {
-    fontSize: 30,
-  },
   bottomNav: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -427,13 +416,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  navIcon: {
-    fontSize: 24,
-    color: "#999",
-  },
-  navIconActive: {
-    color: "#4CAF50",
-  },
   addButton: {
     width: 50,
     height: 50,
@@ -441,10 +423,5 @@ const styles = StyleSheet.create({
     backgroundColor: "#4CAF50",
     justifyContent: "center",
     alignItems: "center",
-  },
-  addIcon: {
-    fontSize: 28,
-    color: "#fff",
-    fontWeight: "300",
   },
 });
