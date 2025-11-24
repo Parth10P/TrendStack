@@ -10,8 +10,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { userAPI } from "../services/api";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CreatePost from "./CreatePost";
+import ProfileButton from "../components/ProfileButton";
 
-export default function Home({ user, onLogout }) {
+export default function Home({ user, onLogout, navigation }) {
   const [showCreatePost, setShowCreatePost] = useState(false);
   const insets = useSafeAreaInsets();
 
@@ -41,9 +42,10 @@ export default function Home({ user, onLogout }) {
           <Text style={styles.appName}>TRENDSTACK</Text>
         </View>
         <View style={styles.statusIcons}>
-          <TouchableOpacity>
-            <Ionicons name="person-circle-outline" size={28} color="#111" />
-          </TouchableOpacity>
+          <ProfileButton
+            onPress={() => navigation.navigate("Profile")}
+            userImage={user?.avatar}
+          />
         </View>
       </View>
 

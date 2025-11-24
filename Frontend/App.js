@@ -2,9 +2,15 @@ import { StatusBar } from "expo-status-bar";
 import { StyleSheet } from "react-native";
 import React, { useState } from "react";
 import { Provider as PaperProvider } from "react-native-paper";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+
 import Login from "./src/screens/Login";
 import Home from "./src/screens/Home";
+import ProfileScreen from "./src/screens/ProfileScreen";
+
+const Stack = createNativeStackNavigator();
 
 export default function App() {
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -23,14 +29,35 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <PaperProvider>
-        <SafeAreaView style={styles.container}>
+        <NavigationContainer>
           <StatusBar style="auto" />
-          {isSignedIn ? (
-            <Home user={user} onLogout={handleLogout} />
-          ) : (
-            <Login onSignInSuccess={handleSignInSuccess} />
-          )}
-        </SafeAreaView>
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            {!isSignedIn ? (
+              <Stack.Screen name="Login">
+                {(props) => (
+                  <Login {...props} onSignInSuccess={handleSignInSuccess} />
+                )}
+              </Stack.Screen>
+            ) : (
+              <>
+                <Stack.Screen name="Home">
+                  {(props) => (
+                    <Home
+                      {...props}
+                      user={user}
+                      onLogout={handleLogout}
+                    />
+                  )}
+                </Stack.Screen>
+                <Stack.Screen
+                  name="Profile"
+                  component={ProfileScreen}
+                  initialParams={{ onLogout: handleLogout }}
+                />
+              </>
+            )}
+          </Stack.Navigator>
+        </NavigationContainer>
       </PaperProvider>
     </SafeAreaProvider>
   );
