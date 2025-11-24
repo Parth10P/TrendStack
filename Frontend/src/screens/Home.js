@@ -12,7 +12,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CreatePost from "./CreatePost";
 
 export default function Home({ user, onLogout }) {
-  const [activeTab, setActiveTab] = useState("Discover");
   const [showCreatePost, setShowCreatePost] = useState(false);
   const insets = useSafeAreaInsets();
 
@@ -29,15 +28,6 @@ export default function Home({ user, onLogout }) {
       }
     }
   };
-
-  // Sample stories data
-  const stories = [
-    { id: 1, label: "Your Story", icon: "person" },
-    { id: 2, label: "Story 1", icon: "heart-outline" },
-    { id: 3, label: "Story 2", icon: "star-outline" },
-    { id: 4, label: "Story 3", icon: "flash-outline" },
-    { id: 5, label: "Story 4", icon: "trophy-outline" },
-  ];
 
   return (
     <View style={styles.container}>
@@ -57,58 +47,10 @@ export default function Home({ user, onLogout }) {
         </View>
       </View>
 
-      {/* Navigation Tabs */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={styles.tab}
-          onPress={() => setActiveTab("Discover")}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "Discover" && styles.tabTextActive,
-            ]}
-          >
-            Discover
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.tab}
-          onPress={() => setActiveTab("Following")}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "Following" && styles.tabTextActive,
-            ]}
-          >
-            Following
-          </Text>
-        </TouchableOpacity>
-      </View>
-
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
       >
-        {/* Stories Section */}
-        <View style={styles.storiesContainer}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.storiesScroll}
-          >
-            {stories.map((story) => (
-              <View key={story.id} style={styles.storyItem}>
-                <View style={styles.storyCircle}>
-                  <Ionicons name={story.icon} size={32} color="#4CAF50" />
-                </View>
-                <Text style={styles.storyLabel}>{story.label}</Text>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-
         {/* Recently Post Section */}
         <View style={styles.postSection}>
           <View style={styles.sectionHeader}>
@@ -266,58 +208,8 @@ const styles = StyleSheet.create({
   statusIcon: {
     fontSize: 14,
   },
-  tabContainer: {
-    flexDirection: "row",
-    backgroundColor: "#fff",
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e6e9ef",
-  },
-  tab: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    marginRight: 20,
-  },
-  tabText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#999",
-  },
-  tabTextActive: {
-    color: "#4CAF50",
-  },
   scrollView: {
     flex: 1,
-  },
-  storiesContainer: {
-    backgroundColor: "#fff",
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e6e9ef",
-  },
-  storiesScroll: {
-    paddingHorizontal: 16,
-  },
-  storyItem: {
-    alignItems: "center",
-    marginRight: 16,
-  },
-  storyCircle: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: "#e6e9ef",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 6,
-    borderWidth: 2,
-    borderColor: "#4CAF50",
-  },
-  storyLabel: {
-    fontSize: 12,
-    color: "#666",
-    marginTop: 4,
   },
   postSection: {
     backgroundColor: "#fff",
