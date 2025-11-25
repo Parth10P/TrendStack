@@ -10,18 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-export default function ProfileScreen({ navigation, route }) {
-  // Mock data - in a real app this would come from props or context
-  const user = {
-    name: "Parth Patel",
-    email: "parth.patel@example.com",
-    phone: "+1 (555) 123-4567",
-    avatar: "https://ui-avatars.com/api/?name=Parth+Patel&background=0D8ABC&color=fff",
-    bio: "Software Engineer | Tech Enthusiast | Coffee Lover",
-  };
-
-  const { onLogout } = route.params || {};
-
+export default function ProfileScreen({ navigation, user, onLogout }) {
   const handleLogout = () => {
     if (onLogout) {
       onLogout();
@@ -42,33 +31,48 @@ export default function ProfileScreen({ navigation, route }) {
           <View style={{ width: 24 }} />
         </View>
 
-        <View style={styles.profileSection}>
-          <View style={styles.avatarContainer}>
-            <Image source={{ uri: user.avatar }} style={styles.avatar} />
-            <TouchableOpacity style={styles.editAvatarButton}>
-              <Ionicons name="camera" size={20} color="#fff" />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.name}>{user.name}</Text>
-          <Text style={styles.bio}>{user.bio}</Text>
-        </View>
-
-        <View style={styles.infoSection}>
-          <View style={styles.infoItem}>
-            <Ionicons name="mail-outline" size={24} color="#666" />
-            <View style={styles.infoTextContainer}>
-              <Text style={styles.infoLabel}>Email</Text>
-              <Text style={styles.infoValue}>{user.email}</Text>
+          <View style={styles.profileSection}>
+            <View style={styles.avatarContainer}>
+              <Image
+                source={{
+                  uri:
+                    user?.profile?.avatarUrl ||
+                    "https://ui-avatars.com/api/?name=" +
+                      (user?.name || "User") +
+                      "&background=0D8ABC&color=fff",
+                }}
+                style={styles.avatar}
+              />
+              <TouchableOpacity style={styles.editAvatarButton}>
+                <Ionicons name="camera" size={20} color="#fff" />
+              </TouchableOpacity>
             </View>
+            <Text style={styles.name}>{user?.name || "User"}</Text>
+            <Text style={styles.bio}>
+              {user?.profile?.bio || "No bio available"}
+            </Text>
           </View>
 
-          <View style={styles.infoItem}>
-            <Ionicons name="call-outline" size={24} color="#666" />
-            <View style={styles.infoTextContainer}>
-              <Text style={styles.infoLabel}>Phone</Text>
-              <Text style={styles.infoValue}>{user.phone}</Text>
+          <View style={styles.infoSection}>
+            <View style={styles.infoItem}>
+              <Ionicons name="mail-outline" size={24} color="#666" />
+              <View style={styles.infoTextContainer}>
+                <Text style={styles.infoLabel}>Email</Text>
+                <Text style={styles.infoValue}>
+                  {user?.email || "No email"}
+                </Text>
+              </View>
             </View>
-          </View>
+
+            <View style={styles.infoItem}>
+              <Ionicons name="call-outline" size={24} color="#666" />
+              <View style={styles.infoTextContainer}>
+                <Text style={styles.infoLabel}>Phone</Text>
+                <Text style={styles.infoValue}>
+                  {user?.profile?.phone || "No phone number"}
+                </Text>
+              </View>
+            </View>
         </View>
 
         <View style={styles.actionSection}>

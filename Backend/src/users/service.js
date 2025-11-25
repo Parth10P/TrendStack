@@ -32,7 +32,10 @@ async function signUp(data) {
 
 async function login(data) {
   const { username, password } = data;
-  const user = await prisma.user.findUnique({ where: { username } });
+  const user = await prisma.user.findUnique({
+    where: { username },
+    include: { profile: true },
+  });
   if (!user) {
     const err = new Error("Invalid credentials");
     err.statusCode = 401;

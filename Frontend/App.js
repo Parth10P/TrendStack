@@ -49,11 +49,15 @@ export default function App() {
                     />
                   )}
                 </Stack.Screen>
-                <Stack.Screen
-                  name="Profile"
-                  component={ProfileScreen}
-                  initialParams={{ onLogout: handleLogout }}
-                />
+                <Stack.Screen name="Profile">
+                  {(props) => (
+                    <ProfileScreen
+                      {...props}
+                      user={user}
+                      onLogout={handleLogout}
+                    />
+                  )}
+                </Stack.Screen>
               </>
             )}
           </Stack.Navigator>
