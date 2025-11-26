@@ -52,4 +52,27 @@ async function login(data) {
   return user;
 }
 
-module.exports = { signUp, login };
+async function searchUsers(query) {
+  const users = await prisma.user.findMany({
+    where: {
+      OR: [
+        { username: { contains: query } },
+        { name: { contains: query } },
+      ],
+    },
+    select: {
+      id: true,
+      name: true,
+      username: true,
+      profile: {
+        select: {
+          avatarUrl: true,
+        },
+      },
+    },
+    take: 20,
+  });
+  return users;
+}
+
+module.exports = { signUp, login, searchUsers };

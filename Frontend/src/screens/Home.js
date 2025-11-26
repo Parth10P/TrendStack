@@ -119,7 +119,10 @@ export default function Home({ user, onLogout, navigation }) {
         <TouchableOpacity style={styles.navItem}>
           <Ionicons name="home" size={26} color="#4CAF50" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => navigation.navigate("Search")}
+        >
           <Ionicons name="search-outline" size={26} color="#999" />
         </TouchableOpacity>
         <TouchableOpacity

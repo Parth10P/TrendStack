@@ -45,5 +45,34 @@ async function getAllPosts() {
   return posts;
 }
 
-module.exports = { createPost, getAllPosts };
+
+
+async function searchPosts(query) {
+  const posts = await prisma.post.findMany({
+    where: {
+      content: { contains: query },
+    },
+    include: {
+      author: {
+        select: {
+          id: true,
+          name: true,
+          username: true,
+          profile: {
+            select: {
+              avatarUrl: true,
+            },
+          },
+        },
+      },
+    },
+    take: 20,
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+  return posts;
+}
+
+module.exports = { createPost, getAllPosts, searchPosts };
 

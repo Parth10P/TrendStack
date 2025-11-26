@@ -1,7 +1,7 @@
 // API configuration
 // Change localhost to your IP address if testing on a physical device
 // Example: "http://192.168.1.100:3000/api"
-const API_BASE_URL = "http://localhost:3000/api";
+const API_BASE_URL = "http://10.254.201.72:3000/api";
 
 // Make API request
 async function apiRequest(basePath, endpoint, method, body) {
@@ -45,6 +45,11 @@ export const userAPI = {
   async logout() {
     return apiRequest("/users", "/logout", "POST", null);
   },
+
+  // Search users
+  async search(query) {
+    return apiRequest("/users", `/search?q=${encodeURIComponent(query)}`, "GET", null);
+  },
 };
 
 // Post API functions
@@ -57,6 +62,11 @@ export const postAPI = {
   // Get all posts
   async getAllPosts() {
     return apiRequest("/posts", "/", "GET", null);
+  },
+
+  // Search posts
+  async search(query) {
+    return apiRequest("/posts", `/search?q=${encodeURIComponent(query)}`, "GET", null);
   },
 };
 

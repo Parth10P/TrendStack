@@ -1,4 +1,4 @@
-const { createPost, getAllPosts } = require("./service");
+const { createPost, getAllPosts, searchPosts } = require("./service");
 const { requireAuth } = require("../users/middlewares");
 
 // Create a new post
@@ -37,5 +37,18 @@ async function getAll(req, res) {
   }
 }
 
-module.exports = { create, getAll };
+async function search(req, res) {
+  try {
+    const { q } = req.query;
+    if (!q) {
+      return res.status(400).json({ err: "Query parameter 'q' is required" });
+    }
+    const posts = await searchPosts(q);
+    return res.status(200).json(posts);
+  } catch (error) {
+    return res.status(500).json({ err: "Search failed" });
+  }
+}
+
+module.exports = { create, getAll, search };
 
