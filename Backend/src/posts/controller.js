@@ -1,4 +1,11 @@
-const { createPost, getAllPosts, searchPosts } = require("./service");
+const {
+  createPost,
+  getAllPosts,
+  searchPosts,
+  toggleLike,
+  addComment,
+  getComments,
+} = require("./service");
 const { requireAuth } = require("../users/middlewares");
 
 // Create a new post
@@ -26,7 +33,10 @@ async function create(req, res) {
 // Get all posts (for feed)
 async function getAll(req, res) {
   try {
-    const posts = await getAllPosts();
+    // userId might be undefined if not authenticated, but feed usually requires auth
+    // or we can make it optional
+    const userId = req.userId;
+    const posts = await getAllPosts(userId);
     return res.status(200).json({
       message: "Posts retrieved successfully",
       posts,
@@ -50,5 +60,48 @@ async function search(req, res) {
   }
 }
 
-module.exports = { create, getAll, search };
+async function likePost(req, res) {
+  try {
+    const userId = req.userId;
+    const { id } = req.params;
+    const result = await toggleLike(id, userId);
+    return res.status(200).json(result);
+  } catch (error) {
+    return res.status(500).json({ err: "Failed to toggle like" });
+  }
+}
+
+async function commentOnPost(req, res) {
+  try {
+    const userId = req.userId;
+    const { id } = req.params;
+    const { content } = req.body;
+    if (!content) {
+      return res.status(400).json({ err: "Content is required" });
+    }
+    const comment = await addComment(id, userId, content);
+    return res.status(201).json(comment);
+  } catch (error) {
+    return res.status(500).json({ err: "Failed to add comment" });
+  }
+}
+
+async function getPostComments(req, res) {
+  try {
+    const { id } = req.params;
+    const comments = await getComments(id);
+    return res.status(200).json(comments);
+  } catch (error) {
+    return res.status(500).json({ err: "Failed to get comments" });
+  }
+}
+
+module.exports = {
+  create,
+  getAll,
+  search,
+  likePost,
+  commentOnPost,
+  getPostComments,
+};
 

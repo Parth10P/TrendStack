@@ -7,6 +7,10 @@ import {
   ScrollView,
   Image,
   ActivityIndicator,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { userAPI, postAPI } from "../services/api";
@@ -18,6 +22,13 @@ export default function Home({ user, onLogout, navigation }) {
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Comment Modal State
+  const [activePostId, setActivePostId] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState("");
+  const [loadingComments, setLoadingComments] = useState(false);
+
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -32,6 +43,64 @@ export default function Home({ user, onLogout, navigation }) {
       console.error("Failed to fetch posts:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLike = async (postId) => {
+    // Optimistic update
+    setPosts((prevPosts) =>
+      prevPosts.map((post) => {
+        if (post.id === postId) {
+          return {
+            ...post,
+            isLiked: !post.isLiked,
+            likeCount: post.isLiked ? post.likeCount - 1 : post.likeCount + 1,
+          };
+        }
+        return post;
+      })
+    );
+
+    try {
+      await postAPI.toggleLike(postId);
+    } catch (error) {
+      console.error("Failed to toggle like:", error);
+      // Revert on error (optional, but good practice)
+      fetchPosts();
+    }
+  };
+
+  const openComments = async (postId) => {
+    setActivePostId(postId);
+    setLoadingComments(true);
+    try {
+      const data = await postAPI.getComments(postId);
+      setComments(data);
+    } catch (error) {
+      console.error("Failed to fetch comments:", error);
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  const submitComment = async () => {
+    if (!newComment.trim()) return;
+
+    try {
+      const comment = await postAPI.addComment(activePostId, newComment);
+      setComments((prev) => [comment, ...prev]);
+      setNewComment("");
+      
+      // Update comment count in post list
+      setPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post.id === activePostId
+            ? { ...post, commentCount: (post.commentCount || 0) + 1 }
+            : post
+        )
+      );
+    } catch (error) {
+      console.error("Failed to add comment:", error);
     }
   };
 
@@ -74,12 +143,7 @@ export default function Home({ user, onLogout, navigation }) {
       >
         {/* Recently Post Section */}
         <View style={styles.postSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recently Post</Text>
-            <TouchableOpacity>
-              <Ionicons name="ellipsis-horizontal" size={20} color="#666" />
-            </TouchableOpacity>
-          </View>
+
 
           {loading ? (
             <ActivityIndicator
@@ -142,24 +206,42 @@ export default function Home({ user, onLogout, navigation }) {
                 <View
                   style={{
                     flexDirection: "row",
-                    justifyContent: "flex-end",
-                    marginTop: 8,
+                    justifyContent: "flex-start", // Changed to start
+                    marginTop: 12,
                     borderTopWidth: 1,
                     borderTopColor: "#f0f0f0",
                     paddingTop: 12,
                   }}
                 >
-                  <TouchableOpacity style={{ marginRight: 16 }}>
-                    <Ionicons name="heart-outline" size={24} color="#666" />
+                  <TouchableOpacity 
+                    style={{ marginRight: 20, flexDirection: 'row', alignItems: 'center' }}
+                    onPress={() => handleLike(post.id)}
+                  >
+                    <Ionicons 
+                      name={post.isLiked ? "heart" : "heart-outline"} 
+                      size={24} 
+                      color={post.isLiked ? "#ff3b30" : "#666"} 
+                    />
+                    <Text style={{ marginLeft: 6, color: "#666", fontSize: 14 }}>
+                      {post.likeCount || 0}
+                    </Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={{ marginRight: 16 }}>
+                  
+                  <TouchableOpacity 
+                    style={{ marginRight: 20, flexDirection: 'row', alignItems: 'center' }}
+                    onPress={() => openComments(post.id)}
+                  >
                     <Ionicons
                       name="chatbubble-outline"
                       size={22}
                       color="#666"
                     />
+                    <Text style={{ marginLeft: 6, color: "#666", fontSize: 14 }}>
+                      {post.commentCount || 0}
+                    </Text>
                   </TouchableOpacity>
-                  <TouchableOpacity>
+                  
+                  <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Ionicons name="share-social-outline" size={22} color="#666" />
                   </TouchableOpacity>
                 </View>
@@ -168,15 +250,7 @@ export default function Home({ user, onLogout, navigation }) {
           )}
         </View>
 
-        {/* Featured Blog Section */}
-        <View style={styles.featuredSection}>
-          <Text style={styles.sectionTitle}>Featured Blog</Text>
-          <View style={styles.featuredCard}>
-            <View style={styles.featuredProfile}>
-              <Ionicons name="person" size={30} color="#666" />
-            </View>
-          </View>
-        </View>
+
       </ScrollView>
 
       {/* Bottom Navigation Bar */}
@@ -214,6 +288,68 @@ export default function Home({ user, onLogout, navigation }) {
           fetchPosts();
         }}
       />
+
+      {/* Comments Modal */}
+      <Modal
+        visible={activePostId !== null}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setActivePostId(null)}
+      >
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalContainer}
+        >
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Comments</Text>
+            <TouchableOpacity onPress={() => setActivePostId(null)}>
+              <Ionicons name="close" size={24} color="#111" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.commentsList}>
+            {loadingComments ? (
+              <ActivityIndicator size="small" color="#246bff" style={{ marginTop: 20 }} />
+            ) : comments.length === 0 ? (
+              <Text style={styles.emptyComments}>No comments yet.</Text>
+            ) : (
+              comments.map((comment) => (
+                <View key={comment.id} style={styles.commentItem}>
+                  <Image
+                    source={{
+                      uri:
+                        comment.author?.profile?.avatarUrl ||
+                        `https://ui-avatars.com/api/?name=${comment.author?.name}&background=0D8ABC&color=fff`,
+                    }}
+                    style={styles.commentAvatar}
+                  />
+                  <View style={styles.commentContent}>
+                    <Text style={styles.commentAuthor}>{comment.author?.name}</Text>
+                    <Text style={styles.commentText}>{comment.content}</Text>
+                  </View>
+                </View>
+              ))
+            )}
+          </ScrollView>
+
+          <View style={styles.commentInputContainer}>
+            <TextInput
+              style={styles.commentInput}
+              placeholder="Add a comment..."
+              value={newComment}
+              onChangeText={setNewComment}
+              multiline
+            />
+            <TouchableOpacity 
+              style={[styles.sendButton, !newComment.trim() && styles.sendButtonDisabled]}
+              onPress={submitComment}
+              disabled={!newComment.trim()}
+            >
+              <Ionicons name="send" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -287,17 +423,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#e6e9ef",
   },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111",
-  },
+
   postCard: {
     backgroundColor: "#f9fafb",
     borderRadius: 12,
@@ -360,24 +486,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  featuredSection: {
-    backgroundColor: "#fff",
-    padding: 16,
-    marginTop: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e6e9ef",
-  },
-  featuredCard: {
-    marginTop: 12,
-  },
-  featuredProfile: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#e6e9ef",
-    justifyContent: "center",
-    alignItems: "center",
-  },
+
   bottomNav: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -399,5 +508,87 @@ const styles = StyleSheet.create({
     backgroundColor: "#4CAF50",
     justifyContent: "center",
     alignItems: "center",
+  },
+  // Modal Styles
+  modalContainer: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111",
+  },
+  commentsList: {
+    flex: 1,
+    padding: 16,
+  },
+  emptyComments: {
+    textAlign: "center",
+    color: "#666",
+    marginTop: 20,
+  },
+  commentItem: {
+    flexDirection: "row",
+    marginBottom: 16,
+  },
+  commentAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 12,
+  },
+  commentContent: {
+    flex: 1,
+    backgroundColor: "#f6f7fb",
+    padding: 10,
+    borderRadius: 12,
+  },
+  commentAuthor: {
+    fontWeight: "600",
+    fontSize: 14,
+    marginBottom: 4,
+    color: "#111",
+  },
+  commentText: {
+    fontSize: 14,
+    color: "#333",
+  },
+  commentInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#f0f0f0",
+    paddingBottom: Platform.OS === "ios" ? 30 : 12,
+  },
+  commentInput: {
+    flex: 1,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginRight: 12,
+    fontSize: 16,
+    maxHeight: 100,
+  },
+  sendButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#246bff",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  sendButtonDisabled: {
+    backgroundColor: "#ccc",
   },
 });

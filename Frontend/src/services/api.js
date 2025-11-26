@@ -68,6 +68,21 @@ export const postAPI = {
   async search(query) {
     return apiRequest("/posts", `/search?q=${encodeURIComponent(query)}`, "GET", null);
   },
+
+  // Toggle like
+  async toggleLike(postId) {
+    return apiRequest("/posts", `/${postId}/like`, "POST", null);
+  },
+
+  // Add comment
+  async addComment(postId, content) {
+    return apiRequest("/posts", `/${postId}/comments`, "POST", { content });
+  },
+
+  // Get comments
+  async getComments(postId) {
+    return apiRequest("/posts", `/${postId}/comments`, "GET", null);
+  },
 };
 
 export default userAPI;
