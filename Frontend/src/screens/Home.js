@@ -1,20 +1,39 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Image,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { userAPI } from "../services/api";
+import { userAPI, postAPI } from "../services/api";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CreatePost from "./CreatePost";
 import ProfileButton from "../components/ProfileButton";
 
 export default function Home({ user, onLogout, navigation }) {
   const [showCreatePost, setShowCreatePost] = useState(false);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  const fetchPosts = async () => {
+    try {
+      const data = await postAPI.getAllPosts();
+      setPosts(data.posts || []);
+    } catch (error) {
+      console.error("Failed to fetch posts:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -62,45 +81,91 @@ export default function Home({ user, onLogout, navigation }) {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.postCard}>
-            <View style={styles.postHeader}>
-              <View style={styles.postHeaderLeft}>
-                <Text style={styles.postTitle}>
-                  Google's MUM Update: SEO Revolution?
-                </Text>
-                <Text style={styles.postDescription}>
-                  Discover adventure in states SEO Revlun's regions the world
-                </Text>
-              </View>
-              <View style={styles.postIcons}>
-                <TouchableOpacity style={styles.postIcon}>
-                  <Ionicons name="camera-outline" size={22} color="#666" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.postIcon}>
-                  <Ionicons name="settings-outline" size={22} color="#666" />
-                </TouchableOpacity>
-              </View>
-            </View>
+          {loading ? (
+            <ActivityIndicator
+              size="large"
+              color="#246bff"
+              style={{ marginTop: 20 }}
+            />
+          ) : posts.length === 0 ? (
+            <Text style={{ textAlign: "center", color: "#666", marginTop: 20 }}>
+              No posts yet. Be the first to post!
+            </Text>
+          ) : (
+            posts.map((post) => (
+              <View
+                key={post.id}
+                style={[styles.postCard, { marginBottom: 16 }]}
+              >
+                <View style={styles.postHeader}>
+                  <View style={styles.postHeaderLeft}>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        marginBottom: 12,
+                      }}
+                    >
+                      <Image
+                        source={{
+                          uri:
+                            post.author?.profile?.avatarUrl ||
+                            `https://ui-avatars.com/api/?name=${post.author?.name}&background=0D8ABC&color=fff`,
+                        }}
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 20,
+                          marginRight: 10,
+                        }}
+                      />
+                      <View>
+                        <Text
+                          style={{
+                            fontWeight: "700",
+                            fontSize: 16,
+                            color: "#111",
+                          }}
+                        >
+                          {post.author?.name}
+                        </Text>
+                        <Text style={{ fontSize: 12, color: "#666" }}>
+                          @{post.author?.username}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={styles.postDescription}>{post.content}</Text>
+                  </View>
+                </View>
 
-            {/* Overlapping Image Cards */}
-            <View style={styles.imageCardsContainer}>
-              <View style={[styles.imageCard, styles.imageCard1]}>
-                <View style={styles.imagePlaceholder}>
-                  <Ionicons name="fitness-outline" size={40} color="#999" />
+                {/* Post Actions */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "flex-end",
+                    marginTop: 8,
+                    borderTopWidth: 1,
+                    borderTopColor: "#f0f0f0",
+                    paddingTop: 12,
+                  }}
+                >
+                  <TouchableOpacity style={{ marginRight: 16 }}>
+                    <Ionicons name="heart-outline" size={24} color="#666" />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={{ marginRight: 16 }}>
+                    <Ionicons
+                      name="chatbubble-outline"
+                      size={22}
+                      color="#666"
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity>
+                    <Ionicons name="share-social-outline" size={22} color="#666" />
+                  </TouchableOpacity>
                 </View>
               </View>
-              <View style={[styles.imageCard, styles.imageCard2]}>
-                <View style={styles.imagePlaceholder}>
-                  <Ionicons name="flash-outline" size={40} color="#999" />
-                </View>
-              </View>
-              <View style={[styles.imageCard, styles.imageCard3]}>
-                <View style={styles.imagePlaceholder}>
-                  <Ionicons name="images-outline" size={40} color="#999" />
-                </View>
-              </View>
-            </View>
-          </View>
+            ))
+          )}
         </View>
 
         {/* Featured Blog Section */}
@@ -146,8 +211,7 @@ export default function Home({ user, onLogout, navigation }) {
         visible={showCreatePost}
         onClose={() => setShowCreatePost(false)}
         onPostCreated={() => {
-          // You can add logic here to refresh the posts feed
-          console.log("Post created! Refresh feed here if needed.");
+          fetchPosts();
         }}
       />
     </View>

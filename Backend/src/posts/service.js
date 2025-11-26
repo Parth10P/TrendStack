@@ -37,6 +37,11 @@ async function getAllPosts() {
           id: true,
           name: true,
           username: true,
+          profile: {
+            select: {
+              avatarUrl: true,
+            },
+          },
         },
       },
     },
