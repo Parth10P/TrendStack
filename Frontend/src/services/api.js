@@ -1,7 +1,15 @@
 // API configuration
 // Change localhost to your IP address if testing on a physical device
 // Example: "http://192.168.1.100:3000/api"
-const API_BASE_URL = "http://10.254.201.72:3000/api";
+
+// this is for hostel
+const API_BASE_URL = "http://10.254.202.57:3000/api";
+
+// this is for mobile hostpot
+// const API_BASE_URL = "http://10.70.194.70:3000/api";
+
+// down this is for in collage
+// const API_BASE_URL = "http://20.20.23.102:3000/api";
 
 // Make API request
 async function apiRequest(basePath, endpoint, method, body) {
@@ -48,7 +56,12 @@ export const userAPI = {
 
   // Search users
   async search(query) {
-    return apiRequest("/users", `/search?q=${encodeURIComponent(query)}`, "GET", null);
+    return apiRequest(
+      "/users",
+      `/search?q=${encodeURIComponent(query)}`,
+      "GET",
+      null
+    );
   },
 };
 
@@ -66,7 +79,12 @@ export const postAPI = {
 
   // Search posts
   async search(query) {
-    return apiRequest("/posts", `/search?q=${encodeURIComponent(query)}`, "GET", null);
+    return apiRequest(
+      "/posts",
+      `/search?q=${encodeURIComponent(query)}`,
+      "GET",
+      null
+    );
   },
 
   // Toggle like
@@ -82,6 +100,14 @@ export const postAPI = {
   // Get comments
   async getComments(postId) {
     return apiRequest("/posts", `/${postId}/comments`, "GET", null);
+  },
+  // Toggle comment like
+  async toggleCommentLike(commentId) {
+    return apiRequest("/posts", `/comments/${commentId}/like`, "POST", null);
+  },
+  // Pin/unpin comment
+  async pinComment(commentId) {
+    return apiRequest("/posts", `/comments/${commentId}/pin`, "POST", null);
   },
 };
 

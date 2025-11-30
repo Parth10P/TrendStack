@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { userAPI } from "../services/api";
+import { useTheme } from "../context/ThemeContext";
 
 // Note: @react-native-google-signin/google-signin is native and may not be
 // available in an Expo managed workflow. For now we use a simple placeholder
@@ -19,6 +20,7 @@ import { userAPI } from "../services/api";
 // the instructions below (expo-auth-session or eject to the bare workflow).
 
 export default function Login({ onSignInSuccess }) {
+  const { theme } = useTheme();
   const [isSignUp, setIsSignUp] = useState(false);
   // Login fields
   const [username, setUsername] = useState("");
@@ -145,16 +147,24 @@ export default function Login({ onSignInSuccess }) {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.cardBackground }]}
     >
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: theme.background }]}>
+        <View style={styles.logoContainer}>
+          <Image
+            source={require("../../assets/logo.png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </View>
+
         <View style={styles.tabRow}>
           <TouchableOpacity
             style={styles.tab}
             onPress={() => setIsSignUp(false)}
             activeOpacity={0.7}
           >
-            <Text style={[styles.tabText, !isSignUp && styles.tabTextActive]}>
+            <Text style={[styles.tabText, !isSignUp && styles.tabTextActive, { color: !isSignUp ? theme.primary : theme.textSecondary }]}>
               Login
             </Text>
             {!isSignUp && <View style={styles.tabUnderline} />}
@@ -165,7 +175,7 @@ export default function Login({ onSignInSuccess }) {
             onPress={() => setIsSignUp(true)}
             activeOpacity={0.7}
           >
-            <Text style={[styles.tabText, isSignUp && styles.tabTextActive]}>
+            <Text style={[styles.tabText, isSignUp && styles.tabTextActive, { color: isSignUp ? theme.primary : theme.textSecondary }]}>
               Sign Up
             </Text>
             {isSignUp && <View style={styles.tabUnderline} />}
@@ -174,39 +184,43 @@ export default function Login({ onSignInSuccess }) {
 
         {isSignUp ? (
           <>
-            <Text style={styles.title}>Create an Account</Text>
-            <Text style={styles.label}>Full Name</Text>
+            <Text style={[styles.title, { color: theme.text }]}>Create an Account</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Full Name</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text }]}
               placeholder="John Doe"
+              placeholderTextColor={theme.textSecondary}
               value={name}
               onChangeText={setName}
             />
 
-            <Text style={styles.label}>Username</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Username</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text }]}
               placeholder="johndoe"
+              placeholderTextColor={theme.textSecondary}
               value={signUpUsername}
               onChangeText={setSignUpUsername}
               autoCapitalize="none"
               autoCorrect={false}
             />
 
-            <Text style={styles.label}>Email Address</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Email Address</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text }]}
               placeholder="you@example.com"
+              placeholderTextColor={theme.textSecondary}
               keyboardType="email-address"
               autoCapitalize="none"
               value={email}
               onChangeText={setEmail}
             />
 
-            <Text style={styles.label}>Password</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Password</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text }]}
               placeholder="Create a strong password"
+              placeholderTextColor={theme.textSecondary}
               secureTextEntry
               value={signUpPassword}
               onChangeText={setSignUpPassword}
@@ -229,12 +243,13 @@ export default function Login({ onSignInSuccess }) {
           </>
         ) : (
           <>
-            <Text style={styles.title}>Welcome Back!</Text>
+            <Text style={[styles.title, { color: theme.text }]}>Welcome Back!</Text>
 
-            <Text style={styles.label}>Username</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Username</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text }]}
               placeholder="your_username"
+              placeholderTextColor={theme.textSecondary}
               value={username}
               onChangeText={setUsername}
               autoCapitalize="none"
@@ -242,10 +257,11 @@ export default function Login({ onSignInSuccess }) {
               returnKeyType="next"
             />
 
-            <Text style={styles.label}>Password</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Password</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text }]}
               placeholder="••••••••"
+              placeholderTextColor={theme.textSecondary}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -275,6 +291,7 @@ export default function Login({ onSignInSuccess }) {
             <TouchableOpacity
               style={[
                 styles.googleButton,
+                { backgroundColor: theme.background, borderColor: theme.border },
                 loading ? styles.googleButtonDisabled : null,
               ]}
               onPress={handleGoogleSignIn}
@@ -289,7 +306,7 @@ export default function Login({ onSignInSuccess }) {
                   style={styles.googleLogo}
                   resizeMode="contain"
                 />
-                <Text style={styles.googleButtonText}>Sign in with Google</Text>
+                <Text style={[styles.googleButtonText, { color: theme.text }]}>Sign in with Google</Text>
               </View>
             </TouchableOpacity>
           </>
@@ -318,6 +335,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 10,
     elevation: 5,
+  },
+  logoContainer: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  logo: {
+    width: 120,
+    height: 120,
   },
   title: {
     fontSize: 24,

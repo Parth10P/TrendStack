@@ -17,17 +17,20 @@ import { userAPI, postAPI } from "../services/api";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CreatePost from "./CreatePost";
 import ProfileButton from "../components/ProfileButton";
+import { useTheme } from "../context/ThemeContext";
 
 export default function Home({ user, onLogout, navigation }) {
+  const { theme } = useTheme();
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Comment Modal State
   const [activePostId, setActivePostId] = useState(null);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [loadingComments, setLoadingComments] = useState(false);
+  const [activePostAuthorId, setActivePostAuthorId] = useState(null);
 
   const insets = useSafeAreaInsets();
 
@@ -76,10 +79,49 @@ export default function Home({ user, onLogout, navigation }) {
     try {
       const data = await postAPI.getComments(postId);
       setComments(data);
+      // find the post author id to enable pin actions (only post author can pin)
+      const post = posts.find((p) => p.id === postId);
+      setActivePostAuthorId(post?.author?.id || null);
     } catch (error) {
       console.error("Failed to fetch comments:", error);
     } finally {
       setLoadingComments(false);
+    }
+  };
+
+  const handleCommentLike = async (commentId) => {
+    // optimistic update
+    setComments((prev) =>
+      prev.map((c) =>
+        c.id === commentId
+          ? {
+              ...c,
+              isLiked: !c.isLiked,
+              likeCount: c.isLiked
+                ? (c.likeCount || 1) - 1
+                : (c.likeCount || 0) + 1,
+            }
+          : c
+      )
+    );
+
+    try {
+      await postAPI.toggleCommentLike(commentId);
+    } catch (error) {
+      console.error("Failed to toggle comment like:", error);
+      // refresh comments on error
+      openComments(activePostId);
+    }
+  };
+
+  const handlePinComment = async (commentId) => {
+    try {
+      const res = await postAPI.pinComment(commentId);
+      setComments((prev) =>
+        prev.map((c) => (c.id === commentId ? { ...c, pinned: res.pinned } : c))
+      );
+    } catch (error) {
+      console.error("Failed to pin comment:", error);
     }
   };
 
@@ -90,7 +132,7 @@ export default function Home({ user, onLogout, navigation }) {
       const comment = await postAPI.addComment(activePostId, newComment);
       setComments((prev) => [comment, ...prev]);
       setNewComment("");
-      
+
       // Update comment count in post list
       setPosts((prevPosts) =>
         prevPosts.map((post) =>
@@ -119,15 +161,26 @@ export default function Home({ user, onLogout, navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.cardBackground }]}>
       {/* Top Bar */}
-      <View style={[styles.topBar, { paddingTop: insets.top }]}>
+      <View
+        style={[
+          styles.topBar,
+          {
+            paddingTop: insets.top,
+            backgroundColor: theme.background,
+            borderBottomColor: theme.border,
+          },
+        ]}
+      >
         <View style={styles.topBarLeft}>
           <View style={styles.logoContainer}>
             <Text style={styles.logoIcon}>P</Text>
             {/* trend stack logo above*/}
           </View>
-          <Text style={styles.appName}>TRENDSTACK</Text>
+          <Text style={[styles.appName, { color: theme.text }]}>
+            TRENDSTACK
+          </Text>
         </View>
         <View style={styles.statusIcons}>
           <ProfileButton
@@ -142,9 +195,15 @@ export default function Home({ user, onLogout, navigation }) {
         showsVerticalScrollIndicator={false}
       >
         {/* Recently Post Section */}
-        <View style={styles.postSection}>
-
-
+        <View
+          style={[
+            styles.postSection,
+            {
+              backgroundColor: theme.background,
+              borderBottomColor: theme.border,
+            },
+          ]}
+        >
           {loading ? (
             <ActivityIndicator
               size="large"
@@ -152,14 +211,23 @@ export default function Home({ user, onLogout, navigation }) {
               style={{ marginTop: 20 }}
             />
           ) : posts.length === 0 ? (
-            <Text style={{ textAlign: "center", color: "#666", marginTop: 20 }}>
+            <Text
+              style={{
+                textAlign: "center",
+                color: theme.textSecondary,
+                marginTop: 20,
+              }}
+            >
               No posts yet. Be the first to post!
             </Text>
           ) : (
             posts.map((post) => (
               <View
                 key={post.id}
-                style={[styles.postCard, { marginBottom: 16 }]}
+                style={[
+                  styles.postCard,
+                  { marginBottom: 16, backgroundColor: theme.cardBackground },
+                ]}
               >
                 <View style={styles.postHeader}>
                   <View style={styles.postHeaderLeft}>
@@ -188,17 +256,26 @@ export default function Home({ user, onLogout, navigation }) {
                           style={{
                             fontWeight: "700",
                             fontSize: 16,
-                            color: "#111",
+                            color: theme.text,
                           }}
                         >
                           {post.author?.name}
                         </Text>
-                        <Text style={{ fontSize: 12, color: "#666" }}>
+                        <Text
+                          style={{ fontSize: 12, color: theme.textSecondary }}
+                        >
                           @{post.author?.username}
                         </Text>
                       </View>
                     </View>
-                    <Text style={styles.postDescription}>{post.content}</Text>
+                    <Text
+                      style={[
+                        styles.postDescription,
+                        { color: theme.textSecondary },
+                      ]}
+                    >
+                      {post.content}
+                    </Text>
                   </View>
                 </View>
 
@@ -209,52 +286,85 @@ export default function Home({ user, onLogout, navigation }) {
                     justifyContent: "flex-start", // Changed to start
                     marginTop: 12,
                     borderTopWidth: 1,
-                    borderTopColor: "#f0f0f0",
+                    borderTopColor: theme.border,
                     paddingTop: 12,
                   }}
                 >
-                  <TouchableOpacity 
-                    style={{ marginRight: 20, flexDirection: 'row', alignItems: 'center' }}
+                  <TouchableOpacity
+                    style={{
+                      marginRight: 20,
+                      flexDirection: "row",
+                      alignItems: "center",
+                    }}
                     onPress={() => handleLike(post.id)}
                   >
-                    <Ionicons 
-                      name={post.isLiked ? "heart" : "heart-outline"} 
-                      size={24} 
-                      color={post.isLiked ? "#ff3b30" : "#666"} 
+                    <Ionicons
+                      name={post.isLiked ? "heart" : "heart-outline"}
+                      size={24}
+                      color={post.isLiked ? "#ff3b30" : theme.iconSecondary}
                     />
-                    <Text style={{ marginLeft: 6, color: "#666", fontSize: 14 }}>
+                    <Text
+                      style={{
+                        marginLeft: 6,
+                        color: theme.textSecondary,
+                        fontSize: 14,
+                      }}
+                    >
                       {post.likeCount || 0}
                     </Text>
                   </TouchableOpacity>
-                  
-                  <TouchableOpacity 
-                    style={{ marginRight: 20, flexDirection: 'row', alignItems: 'center' }}
+
+                  <TouchableOpacity
+                    style={{
+                      marginRight: 20,
+                      flexDirection: "row",
+                      alignItems: "center",
+                    }}
                     onPress={() => openComments(post.id)}
                   >
                     <Ionicons
                       name="chatbubble-outline"
                       size={22}
-                      color="#666"
+                      color={theme.iconSecondary}
                     />
-                    <Text style={{ marginLeft: 6, color: "#666", fontSize: 14 }}>
+                    <Text
+                      style={{
+                        marginLeft: 6,
+                        color: theme.textSecondary,
+                        fontSize: 14,
+                      }}
+                    >
                       {post.commentCount || 0}
                     </Text>
                   </TouchableOpacity>
-                  
-                  <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Ionicons name="share-social-outline" size={22} color="#666" />
+
+                  <TouchableOpacity
+                    style={{ flexDirection: "row", alignItems: "center" }}
+                  >
+                    <Ionicons
+                      name="share-social-outline"
+                      size={22}
+                      color={theme.iconSecondary}
+                    />
                   </TouchableOpacity>
                 </View>
               </View>
             ))
           )}
         </View>
-
-
       </ScrollView>
 
       {/* Bottom Navigation Bar */}
-      <View style={[styles.bottomNav, { paddingBottom: insets.bottom }]}>
+      <View
+        style={[
+          styles.bottomNav,
+          {
+            paddingBottom: insets.bottom,
+            backgroundColor: theme.background,
+            borderTopColor: theme.border,
+          },
+        ]}
+      >
         <TouchableOpacity style={styles.navItem}>
           <Ionicons name="home" size={26} color="#4CAF50" />
         </TouchableOpacity>
@@ -262,7 +372,11 @@ export default function Home({ user, onLogout, navigation }) {
           style={styles.navItem}
           onPress={() => navigation.navigate("Search")}
         >
-          <Ionicons name="search-outline" size={26} color="#999" />
+          <Ionicons
+            name="search-outline"
+            size={26}
+            color={theme.iconSecondary}
+          />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.navItem}
@@ -273,10 +387,18 @@ export default function Home({ user, onLogout, navigation }) {
           </View>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="camera-outline" size={26} color="#999" />
+          <Ionicons
+            name="camera-outline"
+            size={26}
+            color={theme.iconSecondary}
+          />
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="person-add-outline" size={26} color="#999" />
+          <Ionicons
+            name="person-add-outline"
+            size={26}
+            color={theme.iconSecondary}
+          />
         </TouchableOpacity>
       </View>
 
@@ -296,22 +418,34 @@ export default function Home({ user, onLogout, navigation }) {
         presentationStyle="pageSheet"
         onRequestClose={() => setActivePostId(null)}
       >
-        <KeyboardAvoidingView 
+        <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.modalContainer}
+          style={[styles.modalContainer, { backgroundColor: theme.background }]}
         >
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Comments</Text>
+          <View
+            style={[styles.modalHeader, { borderBottomColor: theme.border }]}
+          >
+            <Text style={[styles.modalTitle, { color: theme.text }]}>
+              Comments
+            </Text>
             <TouchableOpacity onPress={() => setActivePostId(null)}>
-              <Ionicons name="close" size={24} color="#111" />
+              <Ionicons name="close" size={24} color={theme.icon} />
             </TouchableOpacity>
           </View>
 
           <ScrollView style={styles.commentsList}>
             {loadingComments ? (
-              <ActivityIndicator size="small" color="#246bff" style={{ marginTop: 20 }} />
+              <ActivityIndicator
+                size="small"
+                color="#246bff"
+                style={{ marginTop: 20 }}
+              />
             ) : comments.length === 0 ? (
-              <Text style={styles.emptyComments}>No comments yet.</Text>
+              <Text
+                style={[styles.emptyComments, { color: theme.textSecondary }]}
+              >
+                No comments yet.
+              </Text>
             ) : (
               comments.map((comment) => (
                 <View key={comment.id} style={styles.commentItem}>
@@ -323,25 +457,131 @@ export default function Home({ user, onLogout, navigation }) {
                     }}
                     style={styles.commentAvatar}
                   />
-                  <View style={styles.commentContent}>
-                    <Text style={styles.commentAuthor}>{comment.author?.name}</Text>
-                    <Text style={styles.commentText}>{comment.content}</Text>
+                  <View
+                    style={[
+                      styles.commentContent,
+                      { backgroundColor: theme.cardBackground },
+                    ]}
+                  >
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Text
+                        style={[styles.commentAuthor, { color: theme.text }]}
+                      >
+                        {comment.author?.name}
+                      </Text>
+                      {comment.pinned ? (
+                        <View
+                          style={{ flexDirection: "row", alignItems: "center" }}
+                        >
+                          <Ionicons name="pin" size={14} color="#f39c12" />
+                          <Text
+                            style={{
+                              marginLeft: 6,
+                              color: theme.textSecondary,
+                              fontSize: 12,
+                            }}
+                          >
+                            Pinned
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                    <Text
+                      style={[
+                        styles.commentText,
+                        { color: theme.textSecondary },
+                      ]}
+                    >
+                      {comment.content}
+                    </Text>
+
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        marginTop: 8,
+                        alignItems: "center",
+                      }}
+                    >
+                      <TouchableOpacity
+                        onPress={() => handleCommentLike(comment.id)}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          marginRight: 16,
+                        }}
+                      >
+                        <Ionicons
+                          name={comment.isLiked ? "heart" : "heart-outline"}
+                          size={18}
+                          color={
+                            comment.isLiked ? "#e74c3c" : theme.iconSecondary
+                          }
+                        />
+                        <Text
+                          style={{ marginLeft: 6, color: theme.textSecondary }}
+                        >
+                          {comment.likeCount || 0}
+                        </Text>
+                      </TouchableOpacity>
+
+                      {/* Pin button visible only to post author */}
+                      {user && user.id === activePostAuthorId ? (
+                        <TouchableOpacity
+                          onPress={() => handlePinComment(comment.id)}
+                          style={{ flexDirection: "row", alignItems: "center" }}
+                        >
+                          <Ionicons
+                            name={comment.pinned ? "pin" : "pin-outline"}
+                            size={18}
+                            color={
+                              comment.pinned ? "#f39c12" : theme.iconSecondary
+                            }
+                          />
+                          <Text
+                            style={{
+                              marginLeft: 6,
+                              color: theme.textSecondary,
+                            }}
+                          >
+                            {comment.pinned ? "Unpin" : "Pin"}
+                          </Text>
+                        </TouchableOpacity>
+                      ) : null}
+                    </View>
                   </View>
                 </View>
               ))
             )}
           </ScrollView>
 
-          <View style={styles.commentInputContainer}>
+          <View
+            style={[
+              styles.commentInputContainer,
+              { borderTopColor: theme.border },
+            ]}
+          >
             <TextInput
-              style={styles.commentInput}
+              style={[
+                styles.commentInput,
+                { backgroundColor: theme.inputBackground, color: theme.text },
+              ]}
               placeholder="Add a comment..."
+              placeholderTextColor={theme.textSecondary}
               value={newComment}
               onChangeText={setNewComment}
               multiline
             />
-            <TouchableOpacity 
-              style={[styles.sendButton, !newComment.trim() && styles.sendButtonDisabled]}
+            <TouchableOpacity
+              style={[
+                styles.sendButton,
+                !newComment.trim() && styles.sendButtonDisabled,
+              ]}
               onPress={submitComment}
               disabled={!newComment.trim()}
             >

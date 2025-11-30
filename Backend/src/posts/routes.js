@@ -8,6 +8,8 @@ const {
   likePost,
   commentOnPost,
   getPostComments,
+  commentLike,
+  pinComment,
 } = require("./controller");
 const router = express.Router();
 
@@ -21,6 +23,9 @@ router.get("/search", search);
 router.post("/:id/like", requireAuth, likePost);
 router.post("/:id/comments", requireAuth, commentOnPost);
 router.get("/:id/comments", getPostComments);
+// Comment-specific actions
+router.post("/comments/:id/like", requireAuth, commentLike);
+router.post("/comments/:id/pin", requireAuth, pinComment);
 
 // Health check
 router.get("/health", (req, res) => {
@@ -28,4 +33,3 @@ router.get("/health", (req, res) => {
 });
 
 module.exports = { router };
-

@@ -12,8 +12,10 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { userAPI, postAPI } from "../services/api";
+import { useTheme } from "../context/ThemeContext";
 
 export default function Search({ navigation }) {
+  const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("people"); // 'people' or 'posts'
   const [results, setResults] = useState([]);
@@ -55,7 +57,7 @@ export default function Search({ navigation }) {
   };
 
   const renderUserItem = ({ item }) => (
-    <TouchableOpacity style={styles.userItem}>
+    <TouchableOpacity style={[styles.userItem, { backgroundColor: theme.cardBackground }]}>
       <Image
         source={{
           uri:
@@ -65,14 +67,14 @@ export default function Search({ navigation }) {
         style={styles.avatar}
       />
       <View style={styles.userInfo}>
-        <Text style={styles.userName}>{item.name}</Text>
-        <Text style={styles.userHandle}>@{item.username}</Text>
+        <Text style={[styles.userName, { color: theme.text }]}>{item.name}</Text>
+        <Text style={[styles.userHandle, { color: theme.textSecondary }]}>@{item.username}</Text>
       </View>
     </TouchableOpacity>
   );
 
   const renderPostItem = ({ item }) => (
-    <TouchableOpacity style={styles.postItem}>
+    <TouchableOpacity style={[styles.postItem, { backgroundColor: theme.cardBackground }]}>
       <View style={styles.postHeader}>
         <Image
           source={{
@@ -82,40 +84,41 @@ export default function Search({ navigation }) {
           }}
           style={styles.postAvatar}
         />
-        <Text style={styles.postAuthor}>{item.author?.name}</Text>
+        <Text style={[styles.postAuthor, { color: theme.text }]}>{item.author?.name}</Text>
       </View>
-      <Text style={styles.postContent} numberOfLines={2}>
+      <Text style={[styles.postContent, { color: theme.textSecondary }]} numberOfLines={2}>
         {item.content}
       </Text>
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: theme.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#111" />
+          <Ionicons name="arrow-back" size={24} color={theme.icon} />
         </TouchableOpacity>
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+        <View style={[styles.searchBar, { backgroundColor: theme.cardBackground }]}>
+          <Ionicons name="search" size={20} color={theme.iconSecondary} style={styles.searchIcon} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: theme.text }]}
             placeholder="Search..."
+            placeholderTextColor={theme.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
             autoFocus
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery("")}>
-              <Ionicons name="close-circle" size={20} color="#999" />
+              <Ionicons name="close-circle" size={20} color={theme.iconSecondary} />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
       {/* Tabs */}
-      <View style={styles.tabs}>
+      <View style={[styles.tabs, { borderBottomColor: theme.border }]}>
         <TouchableOpacity
           style={[styles.tab, activeTab === "people" && styles.activeTab]}
           onPress={() => setActiveTab("people")}
@@ -124,6 +127,7 @@ export default function Search({ navigation }) {
             style={[
               styles.tabText,
               activeTab === "people" && styles.activeTabText,
+              { color: activeTab === "people" ? theme.primary : theme.textSecondary }
             ]}
           >
             People
@@ -137,6 +141,7 @@ export default function Search({ navigation }) {
             style={[
               styles.tabText,
               activeTab === "posts" && styles.activeTabText,
+              { color: activeTab === "posts" ? theme.primary : theme.textSecondary }
             ]}
           >
             Posts
@@ -152,7 +157,7 @@ export default function Search({ navigation }) {
       ) : error ? (
         <View style={styles.center}>
           <Ionicons name="alert-circle-outline" size={48} color="#ff6b6b" />
-          <Text style={styles.errorText}>{error}</Text>
+          <Text style={[styles.errorText, { color: theme.textSecondary }]}>{error}</Text>
         </View>
       ) : (
         <FlatList
@@ -163,11 +168,11 @@ export default function Search({ navigation }) {
           ListEmptyComponent={
             <View style={styles.center}>
               {searchQuery.trim() ? (
-                <Text style={styles.emptyText}>No results found</Text>
+                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No results found</Text>
               ) : (
                 <>
-                  <Ionicons name="search-outline" size={48} color="#ccc" />
-                  <Text style={styles.emptyText}>
+                  <Ionicons name="search-outline" size={48} color={theme.iconSecondary} />
+                  <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
                     Type to search for {activeTab}
                   </Text>
                 </>

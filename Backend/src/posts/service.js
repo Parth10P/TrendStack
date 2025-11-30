@@ -143,8 +143,8 @@ async function addComment(postId, userId, content) {
   return comment;
 }
 
-async function getComments(postId) {
-  return prisma.comment.findMany({
+async function getComments(postId, currentUserId) {
+  const comments = await prisma.comment.findMany({
     where: { postId: parseInt(postId) },
     orderBy: { createdAt: "desc" },
     include: {
@@ -156,11 +156,91 @@ async function getComments(postId) {
           profile: { select: { avatarUrl: true } },
         },
       },
+      commentLikes: currentUserId
+        ? {
+            where: { userId: parseInt(currentUserId) },
+            select: { userId: true },
+          }
+        : false,
     },
   });
+
+  // map to include isLiked flag (based on currentUserId) and keep likeCount/pinned
+  return comments.map((c) => ({
+    ...c,
+    isLiked: c.commentLikes && c.commentLikes.length > 0,
+    commentLikes: undefined,
+  }));
 }
 
+// Toggle like on a comment
+async function toggleCommentLike(commentId, userId) {
+  const cId = parseInt(commentId);
+  const uId = parseInt(userId);
 
+  const existing = await prisma.commentLike.findUnique({
+    where: {
+      commentId_userId: {
+        commentId: cId,
+        userId: uId,
+      },
+    },
+  });
+
+  if (existing) {
+    // Unlike
+    await prisma.$transaction([
+      prisma.commentLike.delete({
+        where: {
+          commentId_userId: {
+            commentId: cId,
+            userId: uId,
+          },
+        },
+      }),
+      prisma.comment.update({
+        where: { id: cId },
+        data: { likeCount: { decrement: 1 } },
+      }),
+    ]);
+    return { isLiked: false };
+  } else {
+    // Like
+    await prisma.$transaction([
+      prisma.commentLike.create({ data: { commentId: cId, userId: uId } }),
+      prisma.comment.update({
+        where: { id: cId },
+        data: { likeCount: { increment: 1 } },
+      }),
+    ]);
+    return { isLiked: true };
+  }
+}
+
+// Pin/unpin a comment. Only the author of the post can pin comments under their post.
+async function togglePinComment(commentId, userId) {
+  const cId = parseInt(commentId);
+  const uId = parseInt(userId);
+
+  const comment = await prisma.comment.findUnique({
+    where: { id: cId },
+    include: { post: true },
+  });
+
+  if (!comment) throw new Error("Comment not found");
+
+  if (comment.post.authorId !== uId) {
+    const err = new Error("Not authorized to pin this comment");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  const updated = await prisma.comment.update({
+    where: { id: cId },
+    data: { pinned: !comment.pinned },
+  });
+  return { pinned: updated.pinned };
+}
 
 async function searchPosts(query) {
   const posts = await prisma.post.findMany({
@@ -196,5 +276,6 @@ module.exports = {
   toggleLike,
   addComment,
   getComments,
+  toggleCommentLike,
+  togglePinComment,
 };
-

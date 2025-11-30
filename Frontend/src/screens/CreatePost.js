@@ -12,8 +12,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { postAPI } from "../services/api";
+import { useTheme } from "../context/ThemeContext";
 
 export default function CreatePost({ visible, onClose, onPostCreated }) {
+  const { theme } = useTheme();
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const insets = useSafeAreaInsets();
@@ -87,13 +89,13 @@ export default function CreatePost({ visible, onClose, onPostCreated }) {
       transparent={false}
       onRequestClose={handleCancel}
     >
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: theme.background }]}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: theme.border }]}>
           <TouchableOpacity onPress={handleCancel} style={styles.cancelButton}>
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={[styles.cancelText, { color: theme.textSecondary }]}>Cancel</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Create Post</Text>
+          <Text style={[styles.headerTitle, { color: theme.text }]}>Create Post</Text>
           <TouchableOpacity
             onPress={handleCreatePost}
             style={[styles.postButton, isLoading && styles.postButtonDisabled]}
@@ -111,17 +113,17 @@ export default function CreatePost({ visible, onClose, onPostCreated }) {
         <View style={styles.contentArea}>
           {/* User Info (placeholder) */}
           <View style={styles.userInfo}>
-            <View style={styles.avatar}>
+            <View style={[styles.avatar, { backgroundColor: theme.border }]}>
               <Ionicons name="person" size={24} color="#4CAF50" />
             </View>
-            <Text style={styles.username}>You</Text>
+            <Text style={[styles.username, { color: theme.text }]}>You</Text>
           </View>
 
           {/* Text Input */}
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, { color: theme.text }]}
             placeholder="What's on your mind?"
-            placeholderTextColor="#999"
+            placeholderTextColor={theme.textSecondary}
             multiline
             value={content}
             onChangeText={setContent}

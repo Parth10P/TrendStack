@@ -8,6 +8,8 @@ const {
 } = require("./service");
 const { requireAuth } = require("../users/middlewares");
 
+const { toggleCommentLike, togglePinComment } = require("./service");
+
 // Create a new post
 async function create(req, res) {
   try {
@@ -89,10 +91,40 @@ async function commentOnPost(req, res) {
 async function getPostComments(req, res) {
   try {
     const { id } = req.params;
-    const comments = await getComments(id);
+    // pass optional userId to include per-user like info
+    const userId = req.userId;
+    const comments = await getComments(id, userId);
     return res.status(200).json(comments);
   } catch (error) {
     return res.status(500).json({ err: "Failed to get comments" });
+  }
+}
+
+async function commentLike(req, res) {
+  try {
+    const userId = req.userId;
+    const { id } = req.params; // comment id
+    const result = await toggleCommentLike(id, userId);
+    return res.status(200).json(result);
+  } catch (error) {
+    const code = error.statusCode || 500;
+    return res
+      .status(code)
+      .json({ err: error.message || "Failed to toggle comment like" });
+  }
+}
+
+async function pinComment(req, res) {
+  try {
+    const userId = req.userId;
+    const { id } = req.params; // comment id
+    const result = await togglePinComment(id, userId);
+    return res.status(200).json(result);
+  } catch (error) {
+    const code = error.statusCode || 500;
+    return res
+      .status(code)
+      .json({ err: error.message || "Failed to toggle pin" });
   }
 }
 
@@ -103,5 +135,6 @@ module.exports = {
   likePost,
   commentOnPost,
   getPostComments,
+  commentLike,
+  pinComment,
 };
-

@@ -7,10 +7,14 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  Switch,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../context/ThemeContext";
 
 export default function ProfileScreen({ navigation, user, onLogout }) {
+  const { theme, isDarkMode, toggleTheme } = useTheme();
+
   const handleLogout = () => {
     if (onLogout) {
       onLogout();
@@ -18,16 +22,16 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: theme.border }]}>
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="arrow-back" size={24} color="#111" />
+            <Ionicons name="arrow-back" size={24} color={theme.icon} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Profile</Text>
+          <Text style={[styles.headerTitle, { color: theme.text }]}>Profile</Text>
           <View style={{ width: 24 }} />
         </View>
 
@@ -47,37 +51,52 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
                 <Ionicons name="camera" size={20} color="#fff" />
               </TouchableOpacity>
             </View>
-            <Text style={styles.name}>{user?.name || "User"}</Text>
-            <Text style={styles.bio}>
+            <Text style={[styles.name, { color: theme.text }]}>{user?.name || "User"}</Text>
+            <Text style={[styles.bio, { color: theme.textSecondary }]}>
               {user?.profile?.bio || "No bio available"}
             </Text>
           </View>
 
           <View style={styles.infoSection}>
-            <View style={styles.infoItem}>
-              <Ionicons name="mail-outline" size={24} color="#666" />
+            <View style={[styles.infoItem, { borderBottomColor: theme.border }]}>
+              <Ionicons name="mail-outline" size={24} color={theme.iconSecondary} />
               <View style={styles.infoTextContainer}>
-                <Text style={styles.infoLabel}>Email</Text>
-                <Text style={styles.infoValue}>
+                <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Email</Text>
+                <Text style={[styles.infoValue, { color: theme.text }]}>
                   {user?.email || "No email"}
                 </Text>
               </View>
             </View>
 
-            <View style={styles.infoItem}>
-              <Ionicons name="call-outline" size={24} color="#666" />
+            <View style={[styles.infoItem, { borderBottomColor: theme.border }]}>
+              <Ionicons name="call-outline" size={24} color={theme.iconSecondary} />
               <View style={styles.infoTextContainer}>
-                <Text style={styles.infoLabel}>Phone</Text>
-                <Text style={styles.infoValue}>
+                <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Phone</Text>
+                <Text style={[styles.infoValue, { color: theme.text }]}>
                   {user?.profile?.phone || "No phone number"}
                 </Text>
               </View>
             </View>
         </View>
 
+        <View style={styles.settingsSection}>
+          <View style={[styles.settingItem, { borderBottomColor: theme.border }]}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="moon-outline" size={24} color={theme.iconSecondary} />
+              <Text style={[styles.settingLabel, { color: theme.text }]}>Dark Mode</Text>
+            </View>
+            <Switch
+              value={isDarkMode}
+              onValueChange={toggleTheme}
+              trackColor={{ false: "#e0e0e0", true: "#bfdbfe" }}
+              thumbColor={isDarkMode ? "#246bff" : "#f4f3f4"}
+            />
+          </View>
+        </View>
+
         <View style={styles.actionSection}>
-          <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.actionButtonText}>Edit Profile</Text>
+          <TouchableOpacity style={[styles.actionButton, { backgroundColor: theme.cardBackground }]}>
+            <Text style={[styles.actionButtonText, { color: theme.text }]}>Edit Profile</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -173,6 +192,27 @@ const styles = StyleSheet.create({
   infoValue: {
     fontSize: 16,
     color: "#111",
+  },
+  settingsSection: {
+    paddingHorizontal: 24,
+    marginBottom: 24,
+  },
+  settingItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  settingLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  settingLabel: {
+    fontSize: 16,
+    color: "#111",
+    marginLeft: 16,
   },
   actionSection: {
     paddingHorizontal: 24,

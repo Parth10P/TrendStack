@@ -1,13 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
   provider = "prisma-client-js"
-  // default output (node_modules/.prisma/client) will be used so @prisma/client
-  // can be imported normally. Remove `output` unless you need a custom path.
 }
 
 datasource db {
@@ -31,6 +24,7 @@ model User {
   posts      Post[]
   comments   Comment[]
   likes      Like[]
+  commentLikes CommentLike[]
 
   @@map("users")
 }
@@ -77,6 +71,9 @@ model Comment {
   author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   authorId   Int
   content    String   @db.Text
+  likeCount   Int      @default(0)
+  pinned      Boolean  @default(false)
+  commentLikes CommentLike[]
   parentId   Int?
   parent     Comment? @relation("CommentToComment", fields: [parentId], references: [id], onDelete: Cascade)
   replies    Comment[] @relation("CommentToComment")
@@ -98,5 +95,19 @@ model Like {
   @@unique([postId, userId])
   @@index([userId])
   @@map("likes")
+}
+
+// Likes specific to comments
+model CommentLike {
+  id        Int      @id @default(autoincrement())
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  commentId Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  createdAt DateTime @default(now())
+
+  @@unique([commentId, userId])
+  @@index([userId])
+  @@map("comment_likes")
 }
 

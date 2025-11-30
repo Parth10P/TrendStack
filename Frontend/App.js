@@ -5,6 +5,7 @@ import { Provider as PaperProvider } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { ThemeProvider } from "./src/context/ThemeContext";
 
 import Login from "./src/screens/Login";
 import Home from "./src/screens/Home";
@@ -29,42 +30,44 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <PaperProvider>
-        <NavigationContainer>
-          <StatusBar style="auto" />
-          <Stack.Navigator screenOptions={{ headerShown: false }}>
-            {!isSignedIn ? (
-              <Stack.Screen name="Login">
-                {(props) => (
-                  <Login {...props} onSignInSuccess={handleSignInSuccess} />
-                )}
-              </Stack.Screen>
-            ) : (
-              <>
-                <Stack.Screen name="Home">
+      <ThemeProvider>
+        <PaperProvider>
+          <NavigationContainer>
+            <StatusBar style="auto" />
+            <Stack.Navigator screenOptions={{ headerShown: false }}>
+              {!isSignedIn ? (
+                <Stack.Screen name="Login">
                   {(props) => (
-                    <Home
-                      {...props}
-                      user={user}
-                      onLogout={handleLogout}
-                    />
+                    <Login {...props} onSignInSuccess={handleSignInSuccess} />
                   )}
                 </Stack.Screen>
-                <Stack.Screen name="Profile">
-                  {(props) => (
-                    <ProfileScreen
-                      {...props}
-                      user={user}
-                      onLogout={handleLogout}
-                    />
-                  )}
-                </Stack.Screen>
-                <Stack.Screen name="Search" component={Search} />
-              </>
-            )}
-          </Stack.Navigator>
-        </NavigationContainer>
-      </PaperProvider>
+              ) : (
+                <>
+                  <Stack.Screen name="Home">
+                    {(props) => (
+                      <Home
+                        {...props}
+                        user={user}
+                        onLogout={handleLogout}
+                      />
+                    )}
+                  </Stack.Screen>
+                  <Stack.Screen name="Profile">
+                    {(props) => (
+                      <ProfileScreen
+                        {...props}
+                        user={user}
+                        onLogout={handleLogout}
+                      />
+                    )}
+                  </Stack.Screen>
+                  <Stack.Screen name="Search" component={Search} />
+                </>
+              )}
+            </Stack.Navigator>
+          </NavigationContainer>
+        </PaperProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }
