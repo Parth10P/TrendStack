@@ -3,7 +3,8 @@
 // Example: "http://192.168.1.100:3000/api"
 
 // this is for hostel
-const API_BASE_URL = "http://10.254.202.57:3000/api";
+// const API_BASE_URL = "http://10.254.202.57:3000/api";
+const API_BASE_URL = "https://trend-stack-x2jh.vercel.app/api";
 
 // this is for mobile hostpot
 // const API_BASE_URL = "http://10.70.194.70:3000/api";
