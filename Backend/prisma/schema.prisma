@@ -17,6 +17,7 @@ model User {
   email      String    @unique
   password   String?   // null for OAuth users
   provider   String?   // e.g. "google" or "local"
+  role       String    @default("user") // "user" or "admin"
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 

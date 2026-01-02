@@ -3,18 +3,17 @@
 // Example: "http://192.168.1.100:3000/api"
 
 // this is for hostel
-// const API_BASE_URL = "http://10.254.202.57:3000/api";
-const API_BASE_URL = "https://trend-stack-x2jh.vercel.app/api";
+const API_BASE_URL = "http://10.254.202.57:3001/api";
+// const API_BASE_URL = "https://trend-stack-x2jh.vercel.app/api";
 
 // this is for mobile hostpot
 // const API_BASE_URL = "http://10.70.194.70:3000/api";
 
-// down this is for in collage
-// const API_BASE_URL = "http://20.20.23.102:3000/api";
-
 // Make API request
 async function apiRequest(basePath, endpoint, method, body) {
   const url = `${API_BASE_URL}${basePath}${endpoint}`;
+
+  console.log(`API Request: ${method} ${url}`);
 
   const options = {
     method: method,
@@ -28,14 +27,30 @@ async function apiRequest(basePath, endpoint, method, body) {
     options.body = JSON.stringify(body);
   }
 
-  const response = await fetch(url, options);
-  const data = await response.json();
+  try {
+    const response = await fetch(url, options);
+    
+    // Read text first to debug if JSON parsing fails
+    const textData = await response.text();
+    let data;
+    
+    try {
+      data = JSON.parse(textData);
+    } catch (e) {
+      console.error("JSON Parse Error:", e);
+      console.error("Raw Response:", textData);
+      throw new Error(`Server returned invalid response: ${textData.substring(0, 50)}...`);
+    }
 
-  if (!response.ok) {
-    throw new Error(data.err || data.message || "Something went wrong");
+    if (!response.ok) {
+      throw new Error(data.err || data.message || "Something went wrong");
+    }
+
+    return data;
+  } catch (error) {
+    console.error("API Error:", error);
+    throw error;
   }
-
-  return data;
 }
 
 // User API functions
@@ -60,9 +75,13 @@ export const userAPI = {
     return apiRequest(
       "/users",
       `/search?q=${encodeURIComponent(query)}`,
-      "GET",
       null
     );
+  },
+
+  // Update profile
+  async updateProfile(userData) {
+    return apiRequest("/users", "/profile", "PUT", userData);
   },
 };
 

@@ -278,4 +278,40 @@ module.exports = {
   getComments,
   toggleCommentLike,
   togglePinComment,
+  deletePostById,
+  deleteCommentById,
+  getPostById,
+  getCommentById,
 };
+
+async function getPostById(id) {
+  return await prisma.post.findUnique({ where: { id: parseInt(id) } });
+}
+
+async function getCommentById(id) {
+  return await prisma.comment.findUnique({ where: { id: parseInt(id) } });
+}
+
+// Delete a post
+async function deletePostById(postId) {
+  return await prisma.post.delete({
+    where: { id: parseInt(postId) },
+  });
+}
+
+// Delete a comment
+async function deleteCommentById(commentId, postId) {
+  const cId = parseInt(commentId);
+  const pId = parseInt(postId);
+
+  const [comment] = await prisma.$transaction([
+    prisma.comment.delete({
+      where: { id: cId },
+    }),
+    prisma.post.update({
+      where: { id: pId },
+      data: { commentCount: { decrement: 1 } },
+    }),
+  ]);
+  return comment;
+}

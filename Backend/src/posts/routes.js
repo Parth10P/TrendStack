@@ -10,6 +10,8 @@ const {
   getPostComments,
   commentLike,
   pinComment,
+  deletePost,
+  deleteComment,
 } = require("./controller");
 const router = express.Router();
 
@@ -26,6 +28,8 @@ router.get("/:id/comments", getPostComments);
 // Comment-specific actions
 router.post("/comments/:id/like", requireAuth, commentLike);
 router.post("/comments/:id/pin", requireAuth, pinComment);
+router.delete("/:id", requireAuth, deletePost);
+router.delete("/comments/:id", requireAuth, deleteComment);
 
 // Health check
 router.get("/health", (req, res) => {

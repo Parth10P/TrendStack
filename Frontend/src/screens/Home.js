@@ -174,10 +174,15 @@ export default function Home({ user, onLogout, navigation }) {
         ]}
       >
         <View style={styles.topBarLeft}>
-          <View style={styles.logoContainer}>
-            <Text style={styles.logoIcon}>P</Text>
-            {/* trend stack logo above*/}
-          </View>
+          <Image
+            source={
+              theme.type === 'dark' 
+                ? require("../../assets/icon_dark.png") 
+                : require("../../assets/icon_light.png")
+            }
+            style={{ width: 32, height: 32, marginRight: 8 }}
+            resizeMode="contain"
+          />
           <Text style={[styles.appName, { color: theme.text }]}>
             TRENDSTACK
           </Text>

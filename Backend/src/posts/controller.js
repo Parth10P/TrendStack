@@ -5,6 +5,10 @@ const {
   toggleLike,
   addComment,
   getComments,
+  getPostById,
+  getCommentById,
+  deletePostById,
+  deleteCommentById,
 } = require("./service");
 const { requireAuth } = require("../users/middlewares");
 
@@ -137,4 +141,50 @@ module.exports = {
   getPostComments,
   commentLike,
   pinComment,
+  deletePost,
+  deleteComment,
 };
+
+async function deletePost(req, res) {
+  try {
+    const userId = req.userId;
+    const userRole = req.user.role;
+    const { id } = req.params;
+
+    const post = await getPostById(id);
+    if (!post) {
+      return res.status(404).json({ err: "Post not found" });
+    }
+
+    if (post.authorId !== userId && userRole !== "admin") {
+      return res.status(403).json({ err: "Unauthorized" });
+    }
+
+    await deletePostById(id);
+    return res.status(200).json({ message: "Post deleted successfully" });
+  } catch (error) {
+    return res.status(500).json({ err: "Failed to delete post" });
+  }
+}
+
+async function deleteComment(req, res) {
+  try {
+    const userId = req.userId;
+    const userRole = req.user.role;
+    const { id } = req.params;
+
+    const comment = await getCommentById(id);
+    if (!comment) {
+      return res.status(404).json({ err: "Comment not found" });
+    }
+
+    if (comment.authorId !== userId && userRole !== "admin") {
+      return res.status(403).json({ err: "Unauthorized" });
+    }
+
+    await deleteCommentById(id, comment.postId);
+    return res.status(200).json({ message: "Comment deleted successfully" });
+  } catch (error) {
+    return res.status(500).json({ err: "Failed to delete comment" });
+  }
+}
