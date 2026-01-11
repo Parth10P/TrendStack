@@ -11,25 +11,29 @@ import {
   Image,
   ActivityIndicator,
   Dimensions,
+  SafeAreaView,
+  ScrollView,
 } from "react-native";
 import { userAPI } from "../services/api";
 import { useTheme } from "../context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 
 export default function Login({ onSignInSuccess }) {
   const { theme } = useTheme();
   const [isSignUp, setIsSignUp] = useState(false);
-  
+
   // Login fields
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  
+
   // Sign up fields
   const [name, setName] = useState("");
   const [signUpUsername, setSignUpUsername] = useState("");
   const [email, setEmail] = useState("");
   const [signUpPassword, setSignUpPassword] = useState("");
-  
+
   const [loading, setLoading] = useState(false);
 
   async function handleLocalSignIn() {
@@ -59,7 +63,12 @@ export default function Login({ onSignInSuccess }) {
   }
 
   async function handleSignUp() {
-    if (!name.trim() || !signUpUsername.trim() || !email.trim() || !signUpPassword) {
+    if (
+      !name.trim() ||
+      !signUpUsername.trim() ||
+      !email.trim() ||
+      !signUpPassword
+    ) {
       Alert.alert("Validation", "Please fill all sign up fields");
       return;
     }
@@ -100,7 +109,10 @@ export default function Login({ onSignInSuccess }) {
         },
       ]);
     } catch (error) {
-      Alert.alert("Sign Up Failed", error.message || "Unable to create account");
+      Alert.alert(
+        "Sign Up Failed",
+        error.message || "Unable to create account"
+      );
     } finally {
       setLoading(false);
     }
@@ -125,186 +137,332 @@ export default function Login({ onSignInSuccess }) {
 
   return (
     <View style={styles.container}>
-      {/* Top Section: Brand Header */}
-      <View style={styles.brandSection}>
-          <Image
-            source={require("../../assets/dark_logo.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        <Text style={styles.brandSubtitle}>Discover what's trending now</Text>
-      </View>
+      <LinearGradient
+        colors={
+          theme.type === "dark"
+            ? ["#121212", "#1a1b1e", "#000000"]
+            : ["#f4f6f9", "#e2e6ea", "#dbe0e6"]
+        }
+        style={StyleSheet.absoluteFill}
+      />
 
-      {/* Bottom Section: Action Sheet */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.actionSheetContainer}
-      >
-        <View style={styles.actionSheet}>
-          {/* Segmented Control Tabs */}
-          <View style={styles.tabContainer}>
-            <TouchableOpacity
-              style={[styles.tab, !isSignUp && styles.activeTab]}
-              onPress={() => setIsSignUp(false)}
-              activeOpacity={0.8}
-            >
-              <Text
-                style={[
-                  styles.tabText,
-                  !isSignUp ? styles.activeTabText : styles.inactiveTabText,
-                ]}
-              >
-                Login
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.tab, isSignUp && styles.activeTab]}
-              onPress={() => setIsSignUp(true)}
-              activeOpacity={0.8}
-            >
-              <Text
-                style={[
-                  styles.tabText,
-                  isSignUp ? styles.activeTabText : styles.inactiveTabText,
-                ]}
-              >
-                Sign Up
-              </Text>
-            </TouchableOpacity>
-          </View>
+      {/* Background decoration */}
+      <View style={styles.decorationCircle1} />
+      <View style={styles.decorationCircle2} />
 
-          <Text style={styles.sheetTitle}>
-            {isSignUp ? "Create Account" : "Welcome Back"}
-          </Text>
-
-          {isSignUp ? (
-            /* Sign Up Fields */
-            <>
-               <View style={styles.inputContainer}>
-                <Ionicons name="person-outline" size={20} color="#666" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Full Name"
-                  placeholderTextColor="#999"
-                  value={name}
-                  onChangeText={setName}
-                />
-              </View>
-
-               <View style={styles.inputContainer}>
-                <Ionicons name="at-outline" size={20} color="#666" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Username"
-                  placeholderTextColor="#999"
-                  value={signUpUsername}
-                  onChangeText={setSignUpUsername}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
-
-              <View style={styles.inputContainer}>
-                <Ionicons name="mail-outline" size={20} color="#666" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Email Address"
-                  placeholderTextColor="#999"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  value={email}
-                  onChangeText={setEmail}
-                />
-              </View>
-
-              <View style={styles.inputContainer}>
-                <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Password (min 6 chars)"
-                  placeholderTextColor="#999"
-                  secureTextEntry
-                  value={signUpPassword}
-                  onChangeText={setSignUpPassword}
-                />
-              </View>
-
-              <TouchableOpacity
-                style={[styles.primaryButton, loading && styles.buttonDisabled]}
-                onPress={handleSignUp}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.primaryButtonText}>Sign Up</Text>
-                )}
-              </TouchableOpacity>
-            </>
-          ) : (
-            /* Login Fields */
-            <>
-              <View style={styles.inputContainer}>
-                <Ionicons name="at-outline" size={20} color="#666" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Username"
-                  placeholderTextColor="#999"
-                  value={username}
-                  onChangeText={setUsername}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
-
-              <View style={styles.inputContainer}>
-                <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Password"
-                  placeholderTextColor="#999"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                />
-              </View>
-
-              <TouchableOpacity
-                style={[styles.primaryButton, loading && styles.buttonDisabled]}
-                onPress={handleLocalSignIn}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.primaryButtonText}>Login</Text>
-                )}
-              </TouchableOpacity>
-
-              <View style={styles.dividerContainer}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or continue with</Text>
-                <View style={styles.dividerLine} />
-              </View>
-
-              <TouchableOpacity
-                style={[styles.socialButton, loading && styles.buttonDisabled]}
-                onPress={handleGoogleSignIn}
-                disabled={loading}
-              >
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.keyboardView}
+        >
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Brand Section */}
+            <View style={styles.brandSection}>
+              <View style={styles.logoContainer}>
                 <Image
-                  source={{
-                    uri: "https://developers.google.com/identity/images/g-logo.png",
-                  }}
-                  style={styles.socialIcon}
+                  source={require("../../assets/icon.png")}
+                  style={styles.logo}
                   resizeMode="contain"
                 />
-                <Text style={styles.socialButtonText}>Google</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-      </KeyboardAvoidingView>
+              </View>
+              <Text style={[styles.brandTitle, { color: theme.text }]}>
+                TrendStack
+              </Text>
+              <Text
+                style={[styles.brandSubtitle, { color: theme.textSecondary }]}
+              >
+                Discover what's trending now
+              </Text>
+            </View>
+
+            {/* Login Form Container */}
+            <BlurView
+              intensity={Platform.OS === "ios" ? 30 : 0}
+              tint={theme.type === "dark" ? "dark" : "light"}
+              style={[
+                styles.formContainer,
+                {
+                  backgroundColor:
+                    theme.type === "dark"
+                      ? "rgba(30,30,30,0.7)"
+                      : "rgba(255,255,255,0.8)",
+                },
+              ]}
+            >
+              {/* Tabs */}
+              <View style={styles.tabContainer}>
+                <TouchableOpacity
+                  style={[styles.tab, !isSignUp && styles.activeTab]}
+                  onPress={() => setIsSignUp(false)}
+                >
+                  <Text
+                    style={[
+                      styles.tabText,
+                      !isSignUp
+                        ? { color: theme.primary }
+                        : { color: theme.textSecondary },
+                    ]}
+                  >
+                    Login
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.tab, isSignUp && styles.activeTab]}
+                  onPress={() => setIsSignUp(true)}
+                >
+                  <Text
+                    style={[
+                      styles.tabText,
+                      isSignUp
+                        ? { color: theme.primary }
+                        : { color: theme.textSecondary },
+                    ]}
+                  >
+                    Sign Up
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={[styles.formTitle, { color: theme.text }]}>
+                {isSignUp ? "Create an Account" : "Welcome Back"}
+              </Text>
+
+              {isSignUp ? (
+                <>
+                  <View
+                    style={[
+                      styles.inputContainer,
+                      {
+                        backgroundColor: theme.inputBackground,
+                        borderColor: theme.inputBorder,
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name="person-outline"
+                      size={20}
+                      color={theme.iconSecondary}
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      style={[styles.input, { color: theme.text }]}
+                      placeholder="Full Name"
+                      placeholderTextColor={theme.textSecondary}
+                      value={name}
+                      onChangeText={setName}
+                    />
+                  </View>
+                  <View
+                    style={[
+                      styles.inputContainer,
+                      {
+                        backgroundColor: theme.inputBackground,
+                        borderColor: theme.inputBorder,
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name="at-outline"
+                      size={20}
+                      color={theme.iconSecondary}
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      style={[styles.input, { color: theme.text }]}
+                      placeholder="Username"
+                      placeholderTextColor={theme.textSecondary}
+                      value={signUpUsername}
+                      onChangeText={setSignUpUsername}
+                      autoCapitalize="none"
+                    />
+                  </View>
+                  <View
+                    style={[
+                      styles.inputContainer,
+                      {
+                        backgroundColor: theme.inputBackground,
+                        borderColor: theme.inputBorder,
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name="mail-outline"
+                      size={20}
+                      color={theme.iconSecondary}
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      style={[styles.input, { color: theme.text }]}
+                      placeholder="Email Address"
+                      placeholderTextColor={theme.textSecondary}
+                      value={email}
+                      onChangeText={setEmail}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                    />
+                  </View>
+                  <View
+                    style={[
+                      styles.inputContainer,
+                      {
+                        backgroundColor: theme.inputBackground,
+                        borderColor: theme.inputBorder,
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name="lock-closed-outline"
+                      size={20}
+                      color={theme.iconSecondary}
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      style={[styles.input, { color: theme.text }]}
+                      placeholder="Password"
+                      placeholderTextColor={theme.textSecondary}
+                      value={signUpPassword}
+                      onChangeText={setSignUpPassword}
+                      secureTextEntry
+                    />
+                  </View>
+                  <TouchableOpacity
+                    style={[
+                      styles.primaryButton,
+                      { backgroundColor: theme.primary },
+                      loading && styles.buttonDisabled,
+                    ]}
+                    onPress={handleSignUp}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={styles.primaryButtonText}>Sign Up</Text>
+                    )}
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  <View
+                    style={[
+                      styles.inputContainer,
+                      {
+                        backgroundColor: theme.inputBackground,
+                        borderColor: theme.inputBorder,
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name="at-outline"
+                      size={20}
+                      color={theme.iconSecondary}
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      style={[styles.input, { color: theme.text }]}
+                      placeholder="Username"
+                      placeholderTextColor={theme.textSecondary}
+                      value={username}
+                      onChangeText={setUsername}
+                      autoCapitalize="none"
+                    />
+                  </View>
+                  <View
+                    style={[
+                      styles.inputContainer,
+                      {
+                        backgroundColor: theme.inputBackground,
+                        borderColor: theme.inputBorder,
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name="lock-closed-outline"
+                      size={20}
+                      color={theme.iconSecondary}
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      style={[styles.input, { color: theme.text }]}
+                      placeholder="Password"
+                      placeholderTextColor={theme.textSecondary}
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry
+                    />
+                  </View>
+                  <TouchableOpacity
+                    style={[
+                      styles.primaryButton,
+                      { backgroundColor: theme.primary },
+                      loading && styles.buttonDisabled,
+                    ]}
+                    onPress={handleLocalSignIn}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={styles.primaryButtonText}>Login</Text>
+                    )}
+                  </TouchableOpacity>
+
+                  <View style={styles.dividerContainer}>
+                    <View
+                      style={[
+                        styles.dividerLine,
+                        { backgroundColor: theme.border },
+                      ]}
+                    />
+                    <Text
+                      style={[
+                        styles.dividerText,
+                        { color: theme.textSecondary },
+                      ]}
+                    >
+                      or continue with
+                    </Text>
+                    <View
+                      style={[
+                        styles.dividerLine,
+                        { backgroundColor: theme.border },
+                      ]}
+                    />
+                  </View>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.socialButton,
+                      {
+                        borderColor: theme.border,
+                        backgroundColor: theme.surface,
+                      },
+                    ]}
+                    onPress={handleGoogleSignIn}
+                    disabled={loading}
+                  >
+                    <Image
+                      source={{
+                        uri: "https://developers.google.com/identity/images/g-logo.png",
+                      }}
+                      style={styles.socialIcon}
+                      resizeMode="contain"
+                    />
+                    <Text
+                      style={[styles.socialButtonText, { color: theme.text }]}
+                    >
+                      Google
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </BlurView>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </View>
   );
 }
@@ -314,51 +472,83 @@ const { width } = Dimensions.get("window");
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#1a1b1e", // Dark background for brand section
   },
-  brandSection: {
-    height: "35%", // Top 35%
-    justifyContent: "center",
-    alignItems: "center",
-    paddingBottom: 20,
-  },
-
-  logo: {
-    width: 280,
-    height: 80,
-  },
-
-  brandSubtitle: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.6)",
-  },
-  actionSheetContainer: {
+  safeArea: {
     flex: 1,
-    backgroundColor: "transparent",
-    justifyContent: "flex-end", // Push to bottom
   },
-  actionSheet: {
+  keyboardView: {
     flex: 1,
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
+  },
+  scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 32,
-    // Shadow for elevation feeling
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 20,
+    paddingTop: 60,
+    paddingBottom: 40,
+    justifyContent: "center",
   },
 
-  // Tabs
+  // Decorative Elements
+  decorationCircle1: {
+    position: "absolute",
+    top: -100,
+    right: -50,
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: "rgba(36, 107, 255, 0.15)",
+  },
+  decorationCircle2: {
+    position: "absolute",
+    bottom: -50,
+    left: -100,
+    width: 350,
+    height: 350,
+    borderRadius: 175,
+    backgroundColor: "rgba(108, 92, 231, 0.1)",
+  },
+
+  brandSection: {
+    alignItems: "center",
+    marginBottom: 40,
+  },
+  logoContainer: {
+    marginBottom: 16,
+    shadowColor: "#246bff",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  logo: {
+    width: 100,
+    height: 100,
+    borderRadius: 24,
+  },
+  brandTitle: {
+    fontSize: 32,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  brandSubtitle: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+
+  formContainer: {
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+    overflow: "hidden",
+  },
+
   tabContainer: {
     flexDirection: "row",
-    backgroundColor: "#f3f4f6",
+    marginBottom: 24,
+    backgroundColor: "rgba(0,0,0,0.05)",
     borderRadius: 12,
     padding: 4,
-    marginBottom: 24,
   },
   tab: {
     flex: 1,
@@ -369,37 +559,27 @@ const styles = StyleSheet.create({
   activeTab: {
     backgroundColor: "#fff",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 2,
   },
   tabText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#666",
-  },
-  activeTabText: {
-    color: "#111",
-  },
-  inactiveTabText: {
-    color: "#888",
   },
 
-  sheetTitle: {
-    fontSize: 24,
+  formTitle: {
+    fontSize: 22,
     fontWeight: "700",
-    color: "#111",
-    marginBottom: 24,
+    marginBottom: 20,
     textAlign: "center",
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f9fafb",
     borderWidth: 1,
-    borderColor: "#e6e9ef",
-    borderRadius: 12,
+    borderRadius: 14,
     paddingHorizontal: 16,
     height: 56,
     marginBottom: 16,
@@ -410,20 +590,19 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    color: "#111",
+    height: "100%",
   },
   primaryButton: {
-    backgroundColor: "#246bff",
     height: 56,
-    borderRadius: 12,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 8,
     shadowColor: "#246bff",
     shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 16,
+    elevation: 8,
   },
   buttonDisabled: {
     opacity: 0.7,
@@ -433,6 +612,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
   },
+
   dividerContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -441,22 +621,18 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: "#e6e9ef",
   },
   dividerText: {
     paddingHorizontal: 16,
-    color: "#888",
     fontSize: 14,
   },
   socialButton: {
     flexDirection: "row",
     height: 56,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#e6e9ef",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#fff",
   },
   socialIcon: {
     width: 24,
@@ -466,6 +642,5 @@ const styles = StyleSheet.create({
   socialButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#111",
   },
 });

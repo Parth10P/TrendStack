@@ -176,8 +176,8 @@ export default function Home({ user, onLogout, navigation }) {
         <View style={styles.topBarLeft}>
           <Image
             source={
-              theme.type === 'dark' 
-                ? require("../../assets/icon_dark.png") 
+              theme.type === "dark"
+                ? require("../../assets/icon_dark.png")
                 : require("../../assets/icon_light.png")
             }
             style={{ width: 32, height: 32, marginRight: 8 }}
@@ -231,7 +231,11 @@ export default function Home({ user, onLogout, navigation }) {
                 key={post.id}
                 style={[
                   styles.postCard,
-                  { marginBottom: 16, backgroundColor: theme.cardBackground },
+                  {
+                    backgroundColor: theme.cardBackground,
+                    shadowColor: theme.type === "dark" ? "#000" : "#ccc",
+                    shadowOpacity: theme.type === "dark" ? 0.3 : 0.4,
+                  },
                 ]}
               >
                 <View style={styles.postHeader}>
@@ -250,10 +254,12 @@ export default function Home({ user, onLogout, navigation }) {
                             `https://ui-avatars.com/api/?name=${post.author?.name}&background=0D8ABC&color=fff`,
                         }}
                         style={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: 20,
-                          marginRight: 10,
+                          width: 44,
+                          height: 44,
+                          borderRadius: 22,
+                          marginRight: 12,
+                          borderWidth: 2,
+                          borderColor: theme.border,
                         }}
                       />
                       <View>
@@ -262,12 +268,13 @@ export default function Home({ user, onLogout, navigation }) {
                             fontWeight: "700",
                             fontSize: 16,
                             color: theme.text,
+                            marginBottom: 2,
                           }}
                         >
                           {post.author?.name}
                         </Text>
                         <Text
-                          style={{ fontSize: 12, color: theme.textSecondary }}
+                          style={{ fontSize: 13, color: theme.textSecondary }}
                         >
                           @{post.author?.username}
                         </Text>
@@ -276,7 +283,7 @@ export default function Home({ user, onLogout, navigation }) {
                     <Text
                       style={[
                         styles.postDescription,
-                        { color: theme.textSecondary },
+                        { color: theme.type === "dark" ? "#eee" : "#333" },
                       ]}
                     >
                       {post.content}
@@ -288,16 +295,16 @@ export default function Home({ user, onLogout, navigation }) {
                 <View
                   style={{
                     flexDirection: "row",
-                    justifyContent: "flex-start", // Changed to start
-                    marginTop: 12,
+                    justifyContent: "flex-start",
+                    marginTop: 16,
+                    paddingTop: 16,
                     borderTopWidth: 1,
                     borderTopColor: theme.border,
-                    paddingTop: 12,
                   }}
                 >
                   <TouchableOpacity
                     style={{
-                      marginRight: 20,
+                      marginRight: 24,
                       flexDirection: "row",
                       alignItems: "center",
                     }}
@@ -305,14 +312,15 @@ export default function Home({ user, onLogout, navigation }) {
                   >
                     <Ionicons
                       name={post.isLiked ? "heart" : "heart-outline"}
-                      size={24}
+                      size={26}
                       color={post.isLiked ? "#ff3b30" : theme.iconSecondary}
                     />
                     <Text
                       style={{
-                        marginLeft: 6,
+                        marginLeft: 8,
                         color: theme.textSecondary,
-                        fontSize: 14,
+                        fontSize: 15,
+                        fontWeight: "600",
                       }}
                     >
                       {post.likeCount || 0}
@@ -321,7 +329,7 @@ export default function Home({ user, onLogout, navigation }) {
 
                   <TouchableOpacity
                     style={{
-                      marginRight: 20,
+                      marginRight: 24,
                       flexDirection: "row",
                       alignItems: "center",
                     }}
@@ -329,14 +337,15 @@ export default function Home({ user, onLogout, navigation }) {
                   >
                     <Ionicons
                       name="chatbubble-outline"
-                      size={22}
+                      size={24}
                       color={theme.iconSecondary}
                     />
                     <Text
                       style={{
-                        marginLeft: 6,
+                        marginLeft: 8,
                         color: theme.textSecondary,
-                        fontSize: 14,
+                        fontSize: 15,
+                        fontWeight: "600",
                       }}
                     >
                       {post.commentCount || 0}
@@ -348,7 +357,7 @@ export default function Home({ user, onLogout, navigation }) {
                   >
                     <Ionicons
                       name="share-social-outline"
-                      size={22}
+                      size={24}
                       color={theme.iconSecondary}
                     />
                   </TouchableOpacity>

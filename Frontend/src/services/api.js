@@ -3,8 +3,8 @@
 // Example: "http://192.168.1.100:3000/api"
 
 // this is for hostel
-const API_BASE_URL = "http://10.254.202.57:3001/api";
-// const API_BASE_URL = "https://trend-stack-x2jh.vercel.app/api";
+// const API_BASE_URL = "http://10.254.202.57:3001/api";
+const API_BASE_URL = "https://trend-stack-x2jh.vercel.app/api";
 
 // this is for mobile hostpot
 // const API_BASE_URL = "http://10.70.194.70:3000/api";
@@ -29,11 +29,11 @@ async function apiRequest(basePath, endpoint, method, body) {
 
   try {
     const response = await fetch(url, options);
-    
+
     // Read text first to debug if JSON parsing fails
     const textData = await response.text();
     let data;
-    
+
     try {
       data = JSON.parse(textData);
     } catch (e) {
@@ -128,6 +128,16 @@ export const postAPI = {
   // Pin/unpin comment
   async pinComment(commentId) {
     return apiRequest("/posts", `/comments/${commentId}/pin`, "POST", null);
+  },
+
+  // Delete post
+  async deletePost(postId) {
+    return apiRequest("/posts", `/${postId}`, "DELETE", null);
+  },
+
+  // Delete comment
+  async deleteComment(commentId) {
+    return apiRequest("/posts", `/comments/${commentId}`, "DELETE", null);
   },
 };
 

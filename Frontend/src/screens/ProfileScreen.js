@@ -17,15 +17,16 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context/ThemeContext";
 import { userAPI } from "../services/api";
+import { LinearGradient } from "expo-linear-gradient";
 
 import darkModeProfileLogo from "../../assets/dark_mode_profile_logo.png";
 
 export default function ProfileScreen({ navigation, user, onLogout }) {
   const { theme, isDarkMode, toggleTheme } = useTheme();
-  
+
   // Local state for user to allow immediate UI updates
   const [displayedUser, setDisplayedUser] = useState(user);
-  
+
   // Edit Modal State
   const [modalVisible, setModalVisible] = useState(false);
   const [editName, setEditName] = useState("");
@@ -59,11 +60,11 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
       const updatedData = {
         name: editName,
         email: editEmail,
-        username: displayedUser?.username 
+        username: displayedUser?.username,
       };
 
       const response = await userAPI.updateProfile(updatedData);
-      
+
       // Update local state immediately
       setDisplayedUser({ ...displayedUser, ...response.user });
       setModalVisible(false);
@@ -77,7 +78,9 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.background }]}
+    >
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={[styles.header, { borderBottomColor: theme.border }]}>
           <TouchableOpacity
@@ -86,53 +89,106 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
           >
             <Ionicons name="arrow-back" size={24} color={theme.icon} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>Profile</Text>
+          <Text style={[styles.headerTitle, { color: theme.text }]}>
+            Profile
+          </Text>
           <View style={{ width: 24 }} />
         </View>
 
-          <View style={styles.profileSection}>
-            <View style={styles.avatarContainer}>
-              <Image
-                source={
-                  isDarkMode
-                    ? darkModeProfileLogo
-                    : {
-                        uri:
-                          displayedUser?.profile?.avatarUrl ||
-                          "https://ui-avatars.com/api/?name=" +
-                            (displayedUser?.name || "User") +
-                            "&background=0D8ABC&color=fff",
-                      }
-                }
-                style={styles.avatar}
-              />
+        <View style={styles.profileSection}>
+          <LinearGradient
+            colors={theme.gradient || [theme.primary, theme.secondary]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.coverImage}
+          />
+          <View style={styles.avatarContainer}>
+            <Image
+              source={
+                isDarkMode
+                  ? darkModeProfileLogo
+                  : {
+                      uri:
+                        displayedUser?.profile?.avatarUrl ||
+                        "https://ui-avatars.com/api/?name=" +
+                          (displayedUser?.name || "User") +
+                          "&background=0D8ABC&color=fff",
+                    }
+              }
+              style={[styles.avatar, { borderColor: theme.cardBackground }]}
+            />
+          </View>
+          <Text style={[styles.name, { color: theme.text }]}>
+            {displayedUser?.name || "User"}
+          </Text>
+          <Text style={[styles.bio, { color: theme.textSecondary }]}>
+            {displayedUser?.profile?.bio || "Digital enthusiast & trend setter"}
+          </Text>
 
+          {/* Profile Stats */}
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: theme.text }]}>120</Text>
+              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
+                Posts
+              </Text>
             </View>
-            <Text style={[styles.name, { color: theme.text }]}>{displayedUser?.name || "User"}</Text>
-            <Text style={[styles.bio, { color: theme.textSecondary }]}>
-              {displayedUser?.profile?.bio || "No bio available"}
-            </Text>
+            <View
+              style={[styles.statDivider, { backgroundColor: theme.border }]}
+            />
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: theme.text }]}>
+                4.5k
+              </Text>
+              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
+                Followers
+              </Text>
+            </View>
+            <View
+              style={[styles.statDivider, { backgroundColor: theme.border }]}
+            />
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: theme.text }]}>380</Text>
+              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
+                Following
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.infoSection}>
+          <View style={[styles.infoItem, { borderBottomColor: theme.border }]}>
+            <Ionicons
+              name="mail-outline"
+              size={24}
+              color={theme.iconSecondary}
+            />
+            <View style={styles.infoTextContainer}>
+              <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>
+                Email
+              </Text>
+              <Text style={[styles.infoValue, { color: theme.text }]}>
+                {displayedUser?.email || "No email"}
+              </Text>
+            </View>
           </View>
 
-          <View style={styles.infoSection}>
-            <View style={[styles.infoItem, { borderBottomColor: theme.border }]}>
-              <Ionicons name="mail-outline" size={24} color={theme.iconSecondary} />
-              <View style={styles.infoTextContainer}>
-                <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Email</Text>
-                <Text style={[styles.infoValue, { color: theme.text }]}>
-                  {displayedUser?.email || "No email"}
-                </Text>
-              </View>
-            </View>
-            
-            {/* Phone Number Removed */}
+          {/* Phone Number Removed */}
         </View>
 
         <View style={styles.settingsSection}>
-          <View style={[styles.settingItem, { borderBottomColor: theme.border }]}>
+          <View
+            style={[styles.settingItem, { borderBottomColor: theme.border }]}
+          >
             <View style={styles.settingLeft}>
-              <Ionicons name="moon-outline" size={24} color={theme.iconSecondary} />
-              <Text style={[styles.settingLabel, { color: theme.text }]}>Dark Mode</Text>
+              <Ionicons
+                name="moon-outline"
+                size={24}
+                color={theme.iconSecondary}
+              />
+              <Text style={[styles.settingLabel, { color: theme.text }]}>
+                Dark Mode
+              </Text>
             </View>
             <Switch
               value={isDarkMode}
@@ -144,11 +200,16 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
         </View>
 
         <View style={styles.actionSection}>
-          <TouchableOpacity 
-            style={[styles.actionButton, { backgroundColor: theme.cardBackground }]}
+          <TouchableOpacity
+            style={[
+              styles.actionButton,
+              { backgroundColor: theme.cardBackground },
+            ]}
             onPress={openEditModal}
           >
-            <Text style={[styles.actionButtonText, { color: theme.text }]}>Edit Profile</Text>
+            <Text style={[styles.actionButtonText, { color: theme.text }]}>
+              Edit Profile
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -169,12 +230,16 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
         presentationStyle="pageSheet"
         onRequestClose={() => setModalVisible(false)}
       >
-        <KeyboardAvoidingView 
+        <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={[styles.modalContainer, { backgroundColor: theme.background }]}
         >
-          <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
-            <Text style={[styles.modalTitle, { color: theme.text }]}>Edit Profile</Text>
+          <View
+            style={[styles.modalHeader, { borderBottomColor: theme.border }]}
+          >
+            <Text style={[styles.modalTitle, { color: theme.text }]}>
+              Edit Profile
+            </Text>
             <TouchableOpacity onPress={() => setModalVisible(false)}>
               <Ionicons name="close" size={24} color={theme.icon} />
             </TouchableOpacity>
@@ -182,15 +247,17 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
 
           <View style={styles.formContainer}>
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>Name</Text>
+              <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>
+                Name
+              </Text>
               <TextInput
                 style={[
-                  styles.input, 
-                  { 
-                    backgroundColor: theme.inputBackground, 
+                  styles.input,
+                  {
+                    backgroundColor: theme.inputBackground,
                     borderColor: theme.inputBorder,
-                    color: theme.text 
-                  }
+                    color: theme.text,
+                  },
                 ]}
                 value={editName}
                 onChangeText={setEditName}
@@ -200,15 +267,17 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>Email</Text>
+              <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>
+                Email
+              </Text>
               <TextInput
                 style={[
-                  styles.input, 
-                  { 
-                    backgroundColor: theme.inputBackground, 
+                  styles.input,
+                  {
+                    backgroundColor: theme.inputBackground,
                     borderColor: theme.inputBorder,
-                    color: theme.text 
-                  }
+                    color: theme.text,
+                  },
                 ]}
                 value={editEmail}
                 onChangeText={setEditEmail}
@@ -219,7 +288,7 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
               />
             </View>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.saveButton, { opacity: saving ? 0.7 : 1 }]}
               onPress={handleSaveProfile}
               disabled={saving}
@@ -256,16 +325,50 @@ const styles = StyleSheet.create({
   },
   profileSection: {
     alignItems: "center",
-    paddingVertical: 32,
+    paddingBottom: 24,
+  },
+  coverImage: {
+    width: "100%",
+    height: 150,
   },
   avatarContainer: {
-    position: "relative",
+    marginTop: -50,
     marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   avatar: {
     width: 100,
     height: 100,
     borderRadius: 50,
+    borderWidth: 4,
+  },
+  statsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 24,
+    width: "100%",
+    paddingHorizontal: 24,
+  },
+  statItem: {
+    alignItems: "center",
+    flex: 1,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+  },
+  statDivider: {
+    width: 1,
+    height: 30,
   },
   editAvatarButton: {
     position: "absolute",
