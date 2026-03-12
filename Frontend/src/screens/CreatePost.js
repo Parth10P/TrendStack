@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -8,78 +8,90 @@ import {
   Modal,
   Alert,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { postAPI } from "../services/api";
 import { useTheme } from "../context/ThemeContext";
 
-export default function CreatePost({ visible, onClose, onPostCreated }) {
+const getAvatarSource = (name, avatarUrl) => ({
+  uri:
+    avatarUrl ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      name || "User"
+    )}&background=0D8ABC&color=fff`,
+});
+
+export default function CreatePost({
+  visible,
+  onClose,
+  onPostCreated,
+  user,
+}) {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const insets = useSafeAreaInsets();
 
-  // Handle post creation
+  const trimmedLength = content.trim().length;
+  const remaining = 5000 - content.length;
+  const canPost = trimmedLength > 0 && !isLoading;
+
+  const helperMessage = useMemo(() => {
+    if (content.length === 0) {
+      return "Share a quick update, a thought, or the start of a blog post.";
+    }
+
+    if (remaining < 120) {
+      return `${remaining} characters left`;
+    }
+
+    return "Make it useful, personal, or interesting enough to start replies.";
+  }, [content.length, remaining]);
+
   const handleCreatePost = async () => {
-    // Validate content
     if (!content.trim()) {
-      Alert.alert("Error", "Please write something to post!");
+      Alert.alert("Error", "Please write something to post.");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // Call API to create post
-      const response = await postAPI.createPost({ content: content.trim() });
+      await postAPI.createPost({ content: content.trim() });
+      setContent("");
+      onClose();
 
-      // Show success message
-      Alert.alert("Success", "Post created successfully!", [
-        {
-          text: "OK",
-          onPress: () => {
-            // Clear the input
-            setContent("");
-            // Close modal
-            onClose();
-            // Notify parent to refresh posts
-            if (onPostCreated) {
-              onPostCreated();
-            }
-          },
-        },
-      ]);
+      if (onPostCreated) {
+        onPostCreated();
+      }
     } catch (error) {
-      // Show error message
       Alert.alert("Error", error.message || "Failed to create post. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle cancel
   const handleCancel = () => {
     if (content.trim()) {
-      Alert.alert(
-        "Discard Post?",
-        "Are you sure you want to discard this post?",
-        [
-          { text: "Continue Editing", style: "cancel" },
-          {
-            text: "Discard",
-            style: "destructive",
-            onPress: () => {
-              setContent("");
-              onClose();
-            },
+      Alert.alert("Discard Post?", "Your draft will be removed.", [
+        { text: "Keep Editing", style: "cancel" },
+        {
+          text: "Discard",
+          style: "destructive",
+          onPress: () => {
+            setContent("");
+            onClose();
           },
-        ]
-      );
-    } else {
-      setContent("");
-      onClose();
+        },
+      ]);
+      return;
     }
+
+    setContent("");
+    onClose();
   };
 
   return (
@@ -89,59 +101,181 @@ export default function CreatePost({ visible, onClose, onPostCreated }) {
       transparent={false}
       onRequestClose={handleCancel}
     >
-      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: theme.background }]}>
-        {/* Header */}
+      <View
+        style={[
+          styles.container,
+          { paddingTop: insets.top + 8, backgroundColor: theme.background },
+        ]}
+      >
         <View style={[styles.header, { borderBottomColor: theme.border }]}>
-          <TouchableOpacity onPress={handleCancel} style={styles.cancelButton}>
-            <Text style={[styles.cancelText, { color: theme.textSecondary }]}>Cancel</Text>
+          <TouchableOpacity onPress={handleCancel} style={styles.headerButton}>
+            <Text style={[styles.headerButtonText, { color: theme.textSecondary }]}>
+              Cancel
+            </Text>
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>Create Post</Text>
+
+          <Text style={[styles.headerTitle, { color: theme.text }]}>
+            New Post
+          </Text>
+
           <TouchableOpacity
             onPress={handleCreatePost}
-            style={[styles.postButton, { backgroundColor: theme.primary, shadowColor: theme.primary, shadowOpacity: 0.25, shadowOffset: { width: 0, height: 4 }, shadowRadius: 8 }, isLoading && styles.postButtonDisabled]}
-            disabled={isLoading}
+            style={[
+              styles.postButton,
+              {
+                backgroundColor: theme.primary,
+                opacity: canPost ? 1 : 0.55,
+              },
+            ]}
+            disabled={!canPost}
           >
             {isLoading ? (
               <ActivityIndicator size="small" color={theme.onPrimary} />
             ) : (
-              <Text style={[styles.postButtonText, { color: theme.onPrimary }]}>Post</Text>
+              <Text style={[styles.postButtonText, { color: theme.onPrimary }]}>
+                Post
+              </Text>
             )}
           </TouchableOpacity>
         </View>
 
-        {/* Content Area */}
         <View style={styles.contentArea}>
-          {/* User Info (placeholder) */}
-          <View style={styles.userInfo}>
-            <View style={[styles.avatar, { backgroundColor: theme.border }]}>
-              <Ionicons name="person" size={24} color="#4CAF50" />
+          <LinearGradient
+            colors={
+              theme.type === "dark"
+                ? ["rgba(109, 254, 156, 0.12)", "rgba(9, 19, 40, 0.96)"]
+                : ["#effff4", "#ffffff"]
+            }
+            style={[
+              styles.introCard,
+              {
+                borderColor: theme.border,
+                backgroundColor: theme.cardBackground,
+              },
+            ]}
+          >
+            <View style={styles.userInfo}>
+              <Image
+                source={getAvatarSource(user?.name, user?.profile?.avatarUrl)}
+                style={styles.avatar}
+              />
+              <View style={styles.userMeta}>
+                <Text style={[styles.username, { color: theme.text }]}>
+                  {user?.name || "You"}
+                </Text>
+                <Text
+                  style={[styles.visibilityText, { color: theme.textSecondary }]}
+                >
+                  Posting to your TrendStack feed
+                </Text>
+              </View>
             </View>
-            <Text style={[styles.username, { color: theme.text }]}>You</Text>
+
+            <Text style={[styles.promptTitle, { color: theme.text }]}>
+              What is worth sharing right now?
+            </Text>
+            <Text style={[styles.promptText, { color: theme.textSecondary }]}>
+              Thoughtful posts tend to get more comments than one-line updates.
+            </Text>
+          </LinearGradient>
+
+          <View
+            style={[
+              styles.editorCard,
+              {
+                backgroundColor: theme.cardBackground,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <TextInput
+              style={[styles.textInput, { color: theme.text }]}
+              placeholder="Write your update here..."
+              placeholderTextColor={theme.textSecondary}
+              multiline
+              value={content}
+              onChangeText={setContent}
+              maxLength={5000}
+              autoFocus
+              textAlignVertical="top"
+            />
+
+            <View style={styles.editorFooter}>
+              <Text
+                style={[
+                  styles.helperText,
+                  {
+                    color: remaining < 120 ? theme.danger : theme.textSecondary,
+                  },
+                ]}
+              >
+                {helperMessage}
+              </Text>
+              <Text
+                style={[
+                  styles.characterCountText,
+                  { color: theme.textSecondary },
+                ]}
+              >
+                {content.length}/5000
+              </Text>
+            </View>
           </View>
 
-          {/* Text Input */}
-          <TextInput
-            style={[styles.textInput, { color: theme.text }]}
-            placeholder="What's on your mind?"
-            placeholderTextColor={theme.textSecondary}
-            multiline
-            value={content}
-            onChangeText={setContent}
-            maxLength={5000}
-            autoFocus
-          />
-
-          {/* Character Count */}
-          <View style={styles.characterCount}>
-            <Text style={styles.characterCountText}>
-              {content.length}/5000
+          <View
+            style={[
+              styles.tipCard,
+              {
+                backgroundColor:
+                  theme.type === "dark" ? theme.surface : "#f4f8fb",
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <Ionicons
+              name="bulb-outline"
+              size={20}
+              color={theme.primary}
+              style={styles.tipIcon}
+            />
+            <Text style={[styles.tipText, { color: theme.textSecondary }]}>
+              Posts that ask a question or share a clear takeaway usually spark
+              better conversation.
             </Text>
           </View>
 
-          {/* Optional: Add Image/Media Button (for future) */}
-          <TouchableOpacity style={styles.addMediaButton}>
-            <Ionicons name="image-outline" size={24} color="#4CAF50" />
-            <Text style={styles.addMediaText}>Add Photo</Text>
+          <TouchableOpacity
+            style={[
+              styles.addMediaButton,
+              {
+                borderColor: theme.border,
+                backgroundColor:
+                  theme.type === "dark" ? theme.surface : "#ffffff",
+              },
+            ]}
+            activeOpacity={0.85}
+          >
+            <View
+              style={[
+                styles.addMediaIconWrap,
+                {
+                  backgroundColor:
+                    theme.type === "dark" ? "rgba(109, 254, 156, 0.12)" : "#eef8f2",
+                },
+              ]}
+            >
+              <Ionicons name="image-outline" size={20} color={theme.primary} />
+            </View>
+            <View style={styles.addMediaContent}>
+              <Text style={[styles.addMediaTitle, { color: theme.text }]}>
+                Media upload coming soon
+              </Text>
+              <Text
+                style={[styles.addMediaText, { color: theme.textSecondary }]}
+              >
+                The layout is ready for photos and richer posts next.
+              </Text>
+            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -152,96 +286,151 @@ export default function CreatePost({ visible, onClose, onPostCreated }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 18,
+    paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#e6e9ef",
   },
-  cancelButton: {
-    padding: 8,
+  headerButton: {
+    minWidth: 72,
   },
-  cancelText: {
-    fontSize: 16,
-    color: "#666",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111",
-  },
-  postButton: {
-    backgroundColor: "#4CAF50",
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  postButtonDisabled: {
-    opacity: 0.6,
-  },
-  postButtonText: {
-    color: "#fff",
+  headerButtonText: {
     fontSize: 16,
     fontWeight: "600",
   },
+  headerTitle: {
+    fontSize: 19,
+    fontWeight: "800",
+  },
+  postButton: {
+    minWidth: 72,
+    height: 40,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 18,
+  },
+  postButtonText: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
   contentArea: {
     flex: 1,
-    padding: 16,
+    padding: 18,
+  },
+  introCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 18,
+    marginBottom: 16,
   },
   userInfo: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 16,
   },
   avatar: {
-    width: 40,
-    height: 40,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginRight: 12,
+  },
+  userMeta: {
+    flex: 1,
+  },
+  username: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  visibilityText: {
+    fontSize: 13,
+  },
+  promptTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    lineHeight: 28,
+    marginBottom: 8,
+  },
+  promptText: {
+    fontSize: 14,
+    lineHeight: 21,
+  },
+  editorCard: {
+    flex: 1,
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 18,
+    marginBottom: 16,
+  },
+  textInput: {
+    flex: 1,
+    fontSize: 17,
+    lineHeight: 26,
+    minHeight: 240,
+  },
+  editorFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 16,
+  },
+  helperText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
+    marginRight: 12,
+  },
+  characterCountText: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  tipCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  tipIcon: {
+    marginTop: 1,
+    marginRight: 10,
+  },
+  tipText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  addMediaButton: {
+    borderWidth: 1,
     borderRadius: 20,
-    backgroundColor: "#e6e9ef",
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  addMediaIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
   },
-  username: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#111",
-  },
-  textInput: {
+  addMediaContent: {
     flex: 1,
-    fontSize: 18,
-    color: "#111",
-    textAlignVertical: "top",
-    padding: 0,
-    marginBottom: 12,
   },
-  characterCount: {
-    alignItems: "flex-end",
-    marginBottom: 20,
-  },
-  characterCountText: {
-    fontSize: 12,
-    color: "#999",
-  },
-  addMediaButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#4CAF50",
-    borderRadius: 12,
-    borderStyle: "dashed",
+  addMediaTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 3,
   },
   addMediaText: {
-    marginLeft: 12,
-    fontSize: 16,
-    color: "#4CAF50",
-    fontWeight: "500",
+    fontSize: 13,
+    lineHeight: 18,
   },
 });
-

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -14,16 +14,22 @@ import { Ionicons } from "@expo/vector-icons";
 import { userAPI, postAPI } from "../services/api";
 import { useTheme } from "../context/ThemeContext";
 
+const getAvatarSource = (name, avatarUrl) => ({
+  uri:
+    avatarUrl ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      name || "User"
+    )}&background=0D8ABC&color=fff`,
+});
+
 export default function Search({ navigation }) {
   const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("people"); // 'people' or 'posts'
+  const [activeTab, setActiveTab] = useState("people");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
-
   const [error, setError] = useState(null);
 
-  // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchQuery.trim()) {
@@ -32,7 +38,7 @@ export default function Search({ navigation }) {
         setResults([]);
         setError(null);
       }
-    }, 500);
+    }, 400);
 
     return () => clearTimeout(timer);
   }, [searchQuery, activeTab]);
@@ -40,147 +46,275 @@ export default function Search({ navigation }) {
   const performSearch = async () => {
     setLoading(true);
     setError(null);
+
     try {
-      let data = [];
-      if (activeTab === "people") {
-        data = await userAPI.search(searchQuery);
-      } else {
-        data = await postAPI.search(searchQuery);
-      }
-      setResults(data);
-    } catch (error) {
-      console.error("Search error:", error);
-      setError("Failed to search. Please check your connection.");
+      const data =
+        activeTab === "people"
+          ? await userAPI.search(searchQuery.trim())
+          : await postAPI.search(searchQuery.trim());
+
+      setResults(data || []);
+    } catch (searchError) {
+      console.error("Search error:", searchError);
+      setError("Search failed. Please try again in a moment.");
     } finally {
       setLoading(false);
     }
   };
 
   const renderUserItem = ({ item }) => (
-    <TouchableOpacity style={[styles.userItem, { backgroundColor: theme.cardBackground }]}>
+    <TouchableOpacity
+      style={[
+        styles.userItem,
+        {
+          backgroundColor: theme.cardBackground,
+          borderColor: theme.border,
+        },
+      ]}
+      activeOpacity={0.88}
+    >
       <Image
-        source={{
-          uri:
-            item.profile?.avatarUrl ||
-            `https://ui-avatars.com/api/?name=${item.name}&background=0D8ABC&color=fff`,
-        }}
+        source={getAvatarSource(item.name, item.profile?.avatarUrl)}
         style={styles.avatar}
       />
       <View style={styles.userInfo}>
         <Text style={[styles.userName, { color: theme.text }]}>{item.name}</Text>
-        <Text style={[styles.userHandle, { color: theme.textSecondary }]}>@{item.username}</Text>
+        <Text style={[styles.userHandle, { color: theme.textSecondary }]}>
+          @{item.username}
+        </Text>
+      </View>
+      <View
+        style={[
+          styles.followChip,
+          {
+            backgroundColor:
+              theme.type === "dark" ? theme.surface : "#eef8f2",
+          },
+        ]}
+      >
+        <Text style={[styles.followChipText, { color: theme.primary }]}>
+          View
+        </Text>
       </View>
     </TouchableOpacity>
   );
 
   const renderPostItem = ({ item }) => (
-    <TouchableOpacity style={[styles.postItem, { backgroundColor: theme.cardBackground }]}>
+    <TouchableOpacity
+      style={[
+        styles.postItem,
+        {
+          backgroundColor: theme.cardBackground,
+          borderColor: theme.border,
+        },
+      ]}
+      activeOpacity={0.88}
+    >
       <View style={styles.postHeader}>
-        <Image
-          source={{
-            uri:
-              item.author?.profile?.avatarUrl ||
-              `https://ui-avatars.com/api/?name=${item.author?.name}&background=0D8ABC&color=fff`,
-          }}
-          style={styles.postAvatar}
-        />
-        <Text style={[styles.postAuthor, { color: theme.text }]}>{item.author?.name}</Text>
+        <View style={styles.postAuthorWrap}>
+          <Image
+            source={getAvatarSource(
+              item.author?.name,
+              item.author?.profile?.avatarUrl
+            )}
+            style={styles.postAvatar}
+          />
+          <View style={styles.postAuthorMeta}>
+            <Text style={[styles.postAuthor, { color: theme.text }]}>
+              {item.author?.name || "Unknown user"}
+            </Text>
+            <Text
+              style={[styles.postHandle, { color: theme.textSecondary }]}
+            >
+              @{item.author?.username || "guest"}
+            </Text>
+          </View>
+        </View>
+
+        <Ionicons name="arrow-forward" size={18} color={theme.iconSecondary} />
       </View>
-      <Text style={[styles.postContent, { color: theme.textSecondary }]} numberOfLines={2}>
+      <Text
+        style={[styles.postContent, { color: theme.textSecondary }]}
+        numberOfLines={3}
+      >
         {item.content}
       </Text>
     </TouchableOpacity>
   );
 
+  const listEmpty =
+    searchQuery.trim().length > 0 ? (
+      <View
+        style={[
+          styles.emptyState,
+          {
+            backgroundColor: theme.cardBackground,
+            borderColor: theme.border,
+          },
+        ]}
+      >
+        <Ionicons name="search-outline" size={34} color={theme.primary} />
+        <Text style={[styles.emptyTitle, { color: theme.text }]}>
+          No {activeTab} found
+        </Text>
+        <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+          Try a different keyword, username, or topic.
+        </Text>
+      </View>
+    ) : (
+      <View
+        style={[
+          styles.emptyState,
+          {
+            backgroundColor: theme.cardBackground,
+            borderColor: theme.border,
+          },
+        ]}
+      >
+        <Ionicons name="compass-outline" size={34} color={theme.primary} />
+        <Text style={[styles.emptyTitle, { color: theme.text }]}>
+          Search across TrendStack
+        </Text>
+        <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+          Find people to follow or posts worth reading.
+        </Text>
+      </View>
+    );
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Header */}
       <View style={[styles.header, { borderBottomColor: theme.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={theme.icon} />
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={[
+            styles.backButton,
+            {
+              backgroundColor:
+                theme.type === "dark" ? theme.surface : theme.cardBackground,
+              borderColor: theme.border,
+            },
+          ]}
+        >
+          <Ionicons name="arrow-back" size={20} color={theme.icon} />
         </TouchableOpacity>
-        <View style={[styles.searchBar, { borderBottomColor: theme.border, backgroundColor: 'transparent' }]}>
-          <Ionicons name="search" size={20} color={theme.iconSecondary} style={styles.searchIcon} />
+
+        <View
+          style={[
+            styles.searchBar,
+            {
+              borderColor: theme.border,
+              backgroundColor:
+                theme.type === "dark" ? theme.surface : theme.cardBackground,
+            },
+          ]}
+        >
+          <Ionicons
+            name="search"
+            size={18}
+            color={theme.iconSecondary}
+            style={styles.searchIcon}
+          />
           <TextInput
             style={[styles.searchInput, { color: theme.text }]}
-            placeholder="Search..."
+            placeholder={`Search ${activeTab}`}
             placeholderTextColor={theme.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
             autoFocus
           />
-          {searchQuery.length > 0 && (
+          {searchQuery.length > 0 ? (
             <TouchableOpacity onPress={() => setSearchQuery("")}>
-              <Ionicons name="close-circle" size={20} color={theme.iconSecondary} />
+              <Ionicons
+                name="close-circle"
+                size={18}
+                color={theme.iconSecondary}
+              />
             </TouchableOpacity>
-          )}
+          ) : null}
         </View>
       </View>
 
-      {/* Tabs */}
-      <View style={[styles.tabs, { borderBottomColor: theme.border }]}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "people" && styles.activeTab]}
-          onPress={() => setActiveTab("people")}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "people" && styles.activeTabText,
-              { color: activeTab === "people" ? theme.primary : theme.textSecondary }
-            ]}
-          >
-            People
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "posts" && styles.activeTab]}
-          onPress={() => setActiveTab("posts")}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "posts" && styles.activeTabText,
-              { color: activeTab === "posts" ? theme.primary : theme.textSecondary }
-            ]}
-          >
-            Posts
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <View style={styles.contentWrap}>
+        <Text style={[styles.screenTitle, { color: theme.text }]}>Discover</Text>
+        <Text style={[styles.screenSubtitle, { color: theme.textSecondary }]}>
+          Search for creators, conversations, and fresh ideas.
+        </Text>
 
-      {/* Results */}
-      {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#246bff" />
+        <View
+          style={[
+            styles.tabs,
+            {
+              backgroundColor:
+                theme.type === "dark" ? theme.surface : theme.cardBackground,
+              borderColor: theme.border,
+            },
+          ]}
+        >
+          {["people", "posts"].map((tab) => {
+            const active = activeTab === tab;
+
+            return (
+              <TouchableOpacity
+                key={tab}
+                style={[
+                  styles.tab,
+                  active && {
+                    backgroundColor: theme.primary,
+                  },
+                ]}
+                onPress={() => setActiveTab(tab)}
+              >
+                <Text
+                  style={[
+                    styles.tabText,
+                    {
+                      color: active ? theme.onPrimary : theme.textSecondary,
+                    },
+                  ]}
+                >
+                  {tab === "people" ? "People" : "Posts"}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
-      ) : error ? (
-        <View style={styles.center}>
-          <Ionicons name="alert-circle-outline" size={48} color="#ff6b6b" />
-          <Text style={[styles.errorText, { color: theme.textSecondary }]}>{error}</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={results}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={activeTab === "people" ? renderUserItem : renderPostItem}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <View style={styles.center}>
-              {searchQuery.trim() ? (
-                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No results found</Text>
-              ) : (
-                <>
-                  <Ionicons name="search-outline" size={48} color={theme.iconSecondary} />
-                  <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                    Type to search for {activeTab}
-                  </Text>
-                </>
-              )}
-            </View>
-          }
-        />
-      )}
+
+        {loading ? (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={theme.primary} />
+            <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+              Searching {activeTab}...
+            </Text>
+          </View>
+        ) : error ? (
+          <View
+            style={[
+              styles.emptyState,
+              {
+                backgroundColor: theme.cardBackground,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <Ionicons name="alert-circle-outline" size={34} color={theme.danger} />
+            <Text style={[styles.emptyTitle, { color: theme.text }]}>
+              Something went wrong
+            </Text>
+            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+              {error}
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={results}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={activeTab === "people" ? renderUserItem : renderPostItem}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={listEmpty}
+          />
+        )}
+      </View>
     </SafeAreaView>
   );
 }
@@ -188,81 +322,114 @@ export default function Search({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    marginRight: 12,
   },
   searchBar: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    borderBottomWidth: 1,
-    borderRadius: 0,
-    marginLeft: 12,
-    paddingHorizontal: 8,
-    height: 40,
+    borderWidth: 1,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    minHeight: 48,
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 10,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
-    color: "#111",
+    fontSize: 15,
+  },
+  contentWrap: {
+    flex: 1,
+    paddingHorizontal: 18,
+    paddingTop: 20,
+  },
+  screenTitle: {
+    fontSize: 28,
+    fontWeight: "800",
+    marginBottom: 6,
+  },
+  screenSubtitle: {
+    fontSize: 14,
+    lineHeight: 21,
+    marginBottom: 18,
   },
   tabs: {
     flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 4,
+    marginBottom: 18,
   },
   tab: {
     flex: 1,
+    borderRadius: 14,
     paddingVertical: 12,
     alignItems: "center",
   },
-  activeTab: {
-    borderBottomWidth: 2,
-  },
   tabText: {
-    fontSize: 16,
-    color: "#666",
-    fontWeight: "600",
-  },
-  activeTabText: {
-    color: "#246bff",
+    fontSize: 14,
+    fontWeight: "700",
   },
   listContent: {
-    padding: 16,
+    paddingBottom: 28,
   },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 40,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+  },
+  emptyState: {
+    borderWidth: 1,
+    borderRadius: 24,
+    padding: 24,
+    alignItems: "center",
+    marginTop: 12,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginTop: 12,
+    marginBottom: 6,
   },
   emptyText: {
-    color: "#666",
-    fontSize: 16,
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: "center",
   },
-  // User Item Styles
   userItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
-    padding: 8,
-    backgroundColor: "#fff",
-    borderRadius: 8,
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 14,
+    marginBottom: 12,
   },
   avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     marginRight: 12,
   },
   userInfo: {
@@ -270,39 +437,58 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#111",
+    fontWeight: "700",
+    marginBottom: 4,
   },
   userHandle: {
-    fontSize: 14,
-    color: "#666",
+    fontSize: 13,
   },
-  // Post Item Styles
+  followChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+  },
+  followChipText: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
   postItem: {
-    marginBottom: 16,
+    borderWidth: 1,
+    borderRadius: 20,
     padding: 16,
-    backgroundColor: "#f9fafb",
-    borderRadius: 12,
+    marginBottom: 12,
   },
   postHeader: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 12,
+  },
+  postAuthorWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    marginRight: 12,
   },
   postAvatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    marginRight: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  postAuthorMeta: {
+    flex: 1,
   },
   postAuthor: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#111",
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 3,
+  },
+  postHandle: {
+    fontSize: 12,
   },
   postContent: {
     fontSize: 14,
-    color: "#333",
-    lineHeight: 20,
+    lineHeight: 21,
   },
 });

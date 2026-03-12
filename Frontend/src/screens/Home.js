@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -13,26 +13,42 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { userAPI, postAPI } from "../services/api";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { userAPI, postAPI } from "../services/api";
 import CreatePost from "./CreatePost";
 import ProfileButton from "../components/ProfileButton";
 import { useTheme } from "../context/ThemeContext";
 
+const getAvatarSource = (name, avatarUrl) => ({
+  uri:
+    avatarUrl ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      name || "User"
+    )}&background=0D8ABC&color=fff`,
+});
+
+const formatCount = (value = 0) => {
+  if (value >= 1000) {
+    return `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}k`;
+  }
+
+  return `${value}`;
+};
+
 export default function Home({ user, onLogout, navigation }) {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
+
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Comment Modal State
   const [activePostId, setActivePostId] = useState(null);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [loadingComments, setLoadingComments] = useState(false);
   const [activePostAuthorId, setActivePostAuthorId] = useState(null);
-
-  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     fetchPosts();
@@ -50,25 +66,24 @@ export default function Home({ user, onLogout, navigation }) {
   };
 
   const handleLike = async (postId) => {
-    // Optimistic update
     setPosts((prevPosts) =>
-      prevPosts.map((post) => {
-        if (post.id === postId) {
-          return {
-            ...post,
-            isLiked: !post.isLiked,
-            likeCount: post.isLiked ? post.likeCount - 1 : post.likeCount + 1,
-          };
-        }
-        return post;
-      })
+      prevPosts.map((post) =>
+        post.id === postId
+          ? {
+              ...post,
+              isLiked: !post.isLiked,
+              likeCount: post.isLiked
+                ? (post.likeCount || 1) - 1
+                : (post.likeCount || 0) + 1,
+            }
+          : post
+      )
     );
 
     try {
       await postAPI.toggleLike(postId);
     } catch (error) {
       console.error("Failed to toggle like:", error);
-      // Revert on error (optional, but good practice)
       fetchPosts();
     }
   };
@@ -76,11 +91,12 @@ export default function Home({ user, onLogout, navigation }) {
   const openComments = async (postId) => {
     setActivePostId(postId);
     setLoadingComments(true);
+    setNewComment("");
+
     try {
       const data = await postAPI.getComments(postId);
-      setComments(data);
-      // find the post author id to enable pin actions (only post author can pin)
-      const post = posts.find((p) => p.id === postId);
+      setComments(data || []);
+      const post = posts.find((item) => item.id === postId);
       setActivePostAuthorId(post?.author?.id || null);
     } catch (error) {
       console.error("Failed to fetch comments:", error);
@@ -89,19 +105,25 @@ export default function Home({ user, onLogout, navigation }) {
     }
   };
 
+  const closeComments = () => {
+    setActivePostId(null);
+    setComments([]);
+    setNewComment("");
+    setActivePostAuthorId(null);
+  };
+
   const handleCommentLike = async (commentId) => {
-    // optimistic update
     setComments((prev) =>
-      prev.map((c) =>
-        c.id === commentId
+      prev.map((comment) =>
+        comment.id === commentId
           ? {
-              ...c,
-              isLiked: !c.isLiked,
-              likeCount: c.isLiked
-                ? (c.likeCount || 1) - 1
-                : (c.likeCount || 0) + 1,
+              ...comment,
+              isLiked: !comment.isLiked,
+              likeCount: comment.isLiked
+                ? (comment.likeCount || 1) - 1
+                : (comment.likeCount || 0) + 1,
             }
-          : c
+          : comment
       )
     );
 
@@ -109,16 +131,21 @@ export default function Home({ user, onLogout, navigation }) {
       await postAPI.toggleCommentLike(commentId);
     } catch (error) {
       console.error("Failed to toggle comment like:", error);
-      // refresh comments on error
-      openComments(activePostId);
+      if (activePostId) {
+        openComments(activePostId);
+      }
     }
   };
 
   const handlePinComment = async (commentId) => {
     try {
-      const res = await postAPI.pinComment(commentId);
+      const result = await postAPI.pinComment(commentId);
       setComments((prev) =>
-        prev.map((c) => (c.id === commentId ? { ...c, pinned: res.pinned } : c))
+        prev.map((comment) =>
+          comment.id === commentId
+            ? { ...comment, pinned: result.pinned }
+            : comment
+        )
       );
     } catch (error) {
       console.error("Failed to pin comment:", error);
@@ -126,14 +153,15 @@ export default function Home({ user, onLogout, navigation }) {
   };
 
   const submitComment = async () => {
-    if (!newComment.trim()) return;
+    if (!newComment.trim()) {
+      return;
+    }
 
     try {
-      const comment = await postAPI.addComment(activePostId, newComment);
+      const comment = await postAPI.addComment(activePostId, newComment.trim());
       setComments((prev) => [comment, ...prev]);
       setNewComment("");
 
-      // Update comment count in post list
       setPosts((prevPosts) =>
         prevPosts.map((post) =>
           post.id === activePostId
@@ -146,284 +174,414 @@ export default function Home({ user, onLogout, navigation }) {
     }
   };
 
-  const handleLogout = async () => {
+  const handleLogoutPress = async () => {
     try {
       await userAPI.logout();
-      if (onLogout) {
-        onLogout();
-      }
     } catch (error) {
       console.error("Logout error:", error);
+    } finally {
       if (onLogout) {
         onLogout();
       }
     }
   };
 
+  const headerSubtitle = user?.name
+    ? `Welcome back, ${user.name.split(" ")[0]}`
+    : "See what your community is talking about";
+
   return (
-    <View style={[styles.container, { backgroundColor: theme.cardBackground }]}>
-      {/* Top Bar */}
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View
         style={[
           styles.topBar,
           {
-            paddingTop: insets.top,
-            backgroundColor: theme.background,
+            paddingTop: insets.top + 8,
             borderBottomColor: theme.border,
+            backgroundColor: theme.background,
           },
         ]}
       >
         <View style={styles.topBarLeft}>
           <Image
             source={require("../../assets/trendStack_logo.png")}
-            style={{ width: 32, height: 32, marginRight: 8 }}
+            style={styles.brandLogo}
             resizeMode="contain"
           />
-          <Text style={[styles.appName, { color: theme.text }]}>
-            TRENDSTACK
-          </Text>
+          <View>
+            <Text style={[styles.appName, { color: theme.text }]}>
+              TrendStack
+            </Text>
+            <Text
+              style={[styles.appSubtitle, { color: theme.textSecondary }]}
+              numberOfLines={1}
+            >
+              {headerSubtitle}
+            </Text>
+          </View>
         </View>
-        <View style={styles.statusIcons}>
-          <ProfileButton
-            onPress={() => navigation.navigate("Profile")}
-            userImage={user?.avatar}
-          />
-        </View>
+        <ProfileButton
+          onPress={() => navigation.navigate("Profile")}
+          userImage={user?.profile?.avatarUrl || user?.avatar}
+        />
       </View>
 
       <ScrollView
         style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: 144 + Math.max(insets.bottom, 12) },
+        ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Recently Post Section */}
-        <View
+        <LinearGradient
+          colors={
+            theme.type === "dark"
+              ? ["rgba(109, 254, 156, 0.14)", "rgba(9, 19, 40, 0.95)"]
+              : ["#e8fff1", "#ffffff"]
+          }
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={[
-            styles.postSection,
+            styles.heroCard,
             {
-              backgroundColor: theme.background,
-              borderBottomColor: theme.border,
+              borderColor: theme.border,
+              backgroundColor: theme.cardBackground,
             },
           ]}
         >
-          {loading ? (
-            <ActivityIndicator
-              size="large"
-              color="#246bff"
-              style={{ marginTop: 20 }}
-            />
-          ) : posts.length === 0 ? (
-            <Text
-              style={{
-                textAlign: "center",
-                color: theme.textSecondary,
-                marginTop: 20,
-              }}
-            >
-              No posts yet. Be the first to post!
+          <View style={styles.heroContent}>
+            <Text style={[styles.heroEyebrow, { color: theme.primary }]}>
+              Daily pulse
             </Text>
-          ) : (
-            posts.map((post) => (
-              <View
-                key={post.id}
-                style={[
-                  styles.postCard,
-                  {
-                    backgroundColor: theme.cardBackground,
-                  },
-                ]}
-              >
-                <View style={styles.postHeader}>
-                  <View style={styles.postHeaderLeft}>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        marginBottom: 12,
-                      }}
-                    >
-                      <Image
-                        source={{
-                          uri:
-                            post.author?.profile?.avatarUrl ||
-                            `https://ui-avatars.com/api/?name=${post.author?.name}&background=0D8ABC&color=fff`,
-                        }}
-                        style={{
-                          width: 44,
-                          height: 44,
-                          borderRadius: 22,
-                          marginRight: 12,
-                          borderWidth: 2,
-                          borderColor: theme.border,
-                        }}
-                      />
-                      <View>
-                        <Text
-                          style={{
-                            fontWeight: "700",
-                            fontSize: 16,
-                            color: theme.text,
-                            marginBottom: 2,
-                          }}
-                        >
-                          {post.author?.name}
-                        </Text>
-                        <Text
-                          style={{ fontSize: 13, color: theme.textSecondary }}
-                        >
-                          @{post.author?.username}
-                        </Text>
-                      </View>
-                    </View>
+            <Text style={[styles.heroTitle, { color: theme.text }]}>
+              Share a post, join a conversation, or catch the next trend early.
+            </Text>
+            <Text style={[styles.heroText, { color: theme.textSecondary }]}>
+              Your feed is ready for quick updates, thoughtful comments, and
+              blog-style posts.
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[
+              styles.heroButton,
+              { backgroundColor: theme.primary, shadowColor: theme.primary },
+            ]}
+            onPress={() => setShowCreatePost(true)}
+          >
+            <Ionicons name="create-outline" size={18} color={theme.onPrimary} />
+            <Text style={[styles.heroButtonText, { color: theme.onPrimary }]}>
+              Write a post
+            </Text>
+          </TouchableOpacity>
+        </LinearGradient>
+
+        <TouchableOpacity
+          style={[
+            styles.composerCard,
+            {
+              backgroundColor: theme.cardBackground,
+              borderColor: theme.border,
+            },
+          ]}
+          onPress={() => setShowCreatePost(true)}
+          activeOpacity={0.9}
+        >
+          <Image
+            source={getAvatarSource(user?.name, user?.profile?.avatarUrl)}
+            style={styles.composerAvatar}
+          />
+          <View style={styles.composerContent}>
+            <Text style={[styles.composerPrompt, { color: theme.text }]}>
+              What do you want to share today?
+            </Text>
+            <Text
+              style={[
+                styles.composerSubtext,
+                { color: theme.textSecondary },
+              ]}
+            >
+              Post an update, a thought, or the first lines of your next blog.
+            </Text>
+          </View>
+          <View
+            style={[
+              styles.composerAction,
+              { backgroundColor: theme.type === "dark" ? theme.surface : "#eef4ff" },
+            ]}
+          >
+            <Ionicons name="add" size={20} color={theme.primary} />
+          </View>
+        </TouchableOpacity>
+
+        <View style={styles.sectionHeader}>
+          <View>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              Recent posts
+            </Text>
+            <Text
+              style={[styles.sectionSubtitle, { color: theme.textSecondary }]}
+            >
+              Fresh updates from your network
+            </Text>
+          </View>
+          <TouchableOpacity onPress={fetchPosts}>
+            <Text style={[styles.refreshText, { color: theme.primary }]}>
+              Refresh
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {loading ? (
+          <View
+            style={[
+              styles.centerStateCard,
+              {
+                backgroundColor: theme.cardBackground,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <ActivityIndicator size="large" color={theme.primary} />
+            <Text style={[styles.stateText, { color: theme.textSecondary }]}>
+              Loading the latest conversations...
+            </Text>
+          </View>
+        ) : posts.length === 0 ? (
+          <View
+            style={[
+              styles.centerStateCard,
+              {
+                backgroundColor: theme.cardBackground,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.stateIconWrap,
+                {
+                  backgroundColor:
+                    theme.type === "dark" ? theme.surface : "#eef8f2",
+                },
+              ]}
+            >
+              <Ionicons name="sparkles-outline" size={28} color={theme.primary} />
+            </View>
+            <Text style={[styles.stateTitle, { color: theme.text }]}>
+              No posts yet
+            </Text>
+            <Text style={[styles.stateText, { color: theme.textSecondary }]}>
+              Start the first conversation and give the community something to
+              react to.
+            </Text>
+          </View>
+        ) : (
+          posts.map((post) => (
+            <View
+              key={post.id}
+              style={[
+                styles.postCard,
+                {
+                  backgroundColor: theme.cardBackground,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <View style={styles.postHeader}>
+                <View style={styles.postIdentity}>
+                  <Image
+                    source={getAvatarSource(
+                      post.author?.name,
+                      post.author?.profile?.avatarUrl
+                    )}
+                    style={[
+                      styles.postAvatar,
+                      { borderColor: theme.type === "dark" ? theme.surface : "#fff" },
+                    ]}
+                  />
+                  <View style={styles.postMeta}>
+                    <Text style={[styles.postAuthor, { color: theme.text }]}>
+                      {post.author?.name || "Unknown user"}
+                    </Text>
                     <Text
                       style={[
-                        styles.postDescription,
-                        { color: theme.type === "dark" ? "#eee" : "#333" },
+                        styles.postHandle,
+                        { color: theme.textSecondary },
                       ]}
                     >
-                      {post.content}
+                      @{post.author?.username || "guest"}
                     </Text>
                   </View>
                 </View>
-
-                {/* Post Actions */}
                 <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "flex-start",
-                    marginTop: 16,
-                    paddingTop: 16,
-                    borderTopWidth: 1,
-                    borderTopColor: theme.border,
-                  }}
+                  style={[
+                    styles.badge,
+                    {
+                      backgroundColor:
+                        theme.type === "dark" ? theme.surface : "#f4f8fb",
+                    },
+                  ]}
                 >
-                  <TouchableOpacity
-                    style={{
-                      marginRight: 24,
-                      flexDirection: "row",
-                      alignItems: "center",
-                    }}
-                    onPress={() => handleLike(post.id)}
-                  >
-                    <Ionicons
-                      name={post.isLiked ? "heart" : "heart-outline"}
-                      size={26}
-                      color={post.isLiked ? theme.danger : theme.iconSecondary}
-                    />
-                    <Text
-                      style={{
-                        marginLeft: 8,
-                        color: post.isLiked ? theme.primary : theme.textSecondary,
-                        fontSize: 15,
-                        fontWeight: "600",
-                      }}
-                    >
-                      {post.likeCount || 0}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={{
-                      marginRight: 24,
-                      flexDirection: "row",
-                      alignItems: "center",
-                    }}
-                    onPress={() => openComments(post.id)}
-                  >
-                    <Ionicons
-                      name="chatbubble-outline"
-                      size={24}
-                      color={theme.iconSecondary}
-                    />
-                    <Text
-                      style={{
-                        marginLeft: 8,
-                        color: theme.textSecondary,
-                        fontSize: 15,
-                        fontWeight: "600",
-                      }}
-                    >
-                      {post.commentCount || 0}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={{ flexDirection: "row", alignItems: "center" }}
-                  >
-                    <Ionicons
-                      name="share-social-outline"
-                      size={24}
-                      color={theme.iconSecondary}
-                    />
-                  </TouchableOpacity>
+                  <Ionicons
+                    name="trending-up-outline"
+                    size={14}
+                    color={theme.primary}
+                  />
+                  <Text style={[styles.badgeText, { color: theme.textSecondary }]}>
+                    Trending
+                  </Text>
                 </View>
               </View>
-            ))
-          )}
-        </View>
+
+              <Text style={[styles.postContent, { color: theme.text }]}>
+                {post.content}
+              </Text>
+
+              <View
+                style={[
+                  styles.postFooter,
+                  {
+                    borderTopColor: theme.border,
+                  },
+                ]}
+              >
+                <TouchableOpacity
+                  style={styles.actionItem}
+                  onPress={() => handleLike(post.id)}
+                >
+                  <Ionicons
+                    name={post.isLiked ? "heart" : "heart-outline"}
+                    size={22}
+                    color={post.isLiked ? theme.danger : theme.iconSecondary}
+                  />
+                  <Text
+                    style={[
+                      styles.actionText,
+                      {
+                        color: post.isLiked ? theme.danger : theme.textSecondary,
+                      },
+                    ]}
+                  >
+                    {formatCount(post.likeCount || 0)}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.actionItem}
+                  onPress={() => openComments(post.id)}
+                >
+                  <Ionicons
+                    name="chatbubble-ellipses-outline"
+                    size={22}
+                    color={theme.iconSecondary}
+                  />
+                  <Text
+                    style={[
+                      styles.actionText,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    {formatCount(post.commentCount || 0)}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.actionItem}>
+                  <Ionicons
+                    name="paper-plane-outline"
+                    size={22}
+                    color={theme.iconSecondary}
+                  />
+                  <Text
+                    style={[
+                      styles.actionText,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    Share
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))
+        )}
       </ScrollView>
 
-      {/* Bottom Navigation Bar */}
       <View
         style={[
           styles.bottomNav,
           {
-            paddingBottom: Platform.OS === 'ios' ? Math.max(insets.bottom / 2, 12) : 12,
-            backgroundColor: theme.type === 'dark' ? "rgba(15, 25, 48, 0.92)" : "rgba(255, 255, 255, 0.92)",
+            paddingBottom:
+              Platform.OS === "ios"
+                ? Math.max(insets.bottom / 2, 12)
+                : 12,
+            backgroundColor:
+              theme.type === "dark"
+                ? "rgba(15, 25, 48, 0.95)"
+                : "rgba(255, 255, 255, 0.96)",
+            borderColor: theme.border,
           },
         ]}
       >
         <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="home" size={26} color={theme.primary} />
+          <Ionicons name="home" size={22} color={theme.primary} />
+          <Text style={[styles.navLabel, { color: theme.primary }]}>Home</Text>
         </TouchableOpacity>
+
         <TouchableOpacity
           style={styles.navItem}
           onPress={() => navigation.navigate("Search")}
         >
-          <Ionicons
-            name="search-outline"
-            size={26}
-            color={theme.iconSecondary}
-          />
+          <Ionicons name="search-outline" size={22} color={theme.iconSecondary} />
+          <Text style={[styles.navLabel, { color: theme.textSecondary }]}>
+            Search
+          </Text>
         </TouchableOpacity>
+
         <TouchableOpacity
-          style={styles.navItem}
+          style={styles.centerNavButton}
           onPress={() => setShowCreatePost(true)}
         >
-          <View style={[styles.addButton, { backgroundColor: theme.primary, shadowColor: theme.primary, shadowOpacity: 0.3, shadowOffset: { width: 0, height: 4 }, shadowRadius: 8 }]}>
+          <LinearGradient
+            colors={theme.gradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.addButton}
+          >
             <Ionicons name="add" size={28} color={theme.onPrimary} />
-          </View>
+          </LinearGradient>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons
-            name="camera-outline"
-            size={26}
-            color={theme.iconSecondary}
-          />
+
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => navigation.navigate("Profile")}
+        >
+          <Ionicons name="person-outline" size={22} color={theme.iconSecondary} />
+          <Text style={[styles.navLabel, { color: theme.textSecondary }]}>
+            Profile
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons
-            name="person-add-outline"
-            size={26}
-            color={theme.iconSecondary}
-          />
+
+        <TouchableOpacity style={styles.navItem} onPress={handleLogoutPress}>
+          <Ionicons name="log-out-outline" size={22} color={theme.iconSecondary} />
+          <Text style={[styles.navLabel, { color: theme.textSecondary }]}>
+            Logout
+          </Text>
         </TouchableOpacity>
       </View>
 
-      {/* Create Post Modal */}
       <CreatePost
         visible={showCreatePost}
+        user={user}
         onClose={() => setShowCreatePost(false)}
-        onPostCreated={() => {
-          fetchPosts();
-        }}
+        onPostCreated={fetchPosts}
       />
 
-      {/* Comments Modal */}
       <Modal
         visible={activePostId !== null}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={() => setActivePostId(null)}
+        onRequestClose={closeComments}
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -432,116 +590,145 @@ export default function Home({ user, onLogout, navigation }) {
           <View
             style={[styles.modalHeader, { borderBottomColor: theme.border }]}
           >
-            <Text style={[styles.modalTitle, { color: theme.text }]}>
-              Comments
-            </Text>
-            <TouchableOpacity onPress={() => setActivePostId(null)}>
+            <View>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>
+                Comments
+              </Text>
+              <Text
+                style={[
+                  styles.modalSubtitle,
+                  { color: theme.textSecondary },
+                ]}
+              >
+                Join the conversation
+              </Text>
+            </View>
+            <TouchableOpacity onPress={closeComments}>
               <Ionicons name="close" size={24} color={theme.icon} />
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.commentsList}>
+          <ScrollView
+            style={styles.commentsList}
+            contentContainerStyle={styles.commentsContent}
+            showsVerticalScrollIndicator={false}
+          >
             {loadingComments ? (
               <ActivityIndicator
                 size="small"
-                color="#246bff"
-                style={{ marginTop: 20 }}
+                color={theme.primary}
+                style={{ marginTop: 24 }}
               />
             ) : comments.length === 0 ? (
-              <Text
-                style={[styles.emptyComments, { color: theme.textSecondary }]}
+              <View
+                style={[
+                  styles.commentsEmptyCard,
+                  {
+                    backgroundColor: theme.cardBackground,
+                    borderColor: theme.border,
+                  },
+                ]}
               >
-                No comments yet.
-              </Text>
+                <Ionicons
+                  name="chatbubble-ellipses-outline"
+                  size={28}
+                  color={theme.primary}
+                />
+                <Text style={[styles.stateTitle, { color: theme.text }]}>
+                  No comments yet
+                </Text>
+                <Text
+                  style={[styles.stateText, { color: theme.textSecondary }]}
+                >
+                  Be the first one to respond.
+                </Text>
+              </View>
             ) : (
               comments.map((comment) => (
-                <View key={comment.id} style={styles.commentItem}>
+                <View key={comment.id} style={styles.commentRow}>
                   <Image
-                    source={{
-                      uri:
-                        comment.author?.profile?.avatarUrl ||
-                        `https://ui-avatars.com/api/?name=${comment.author?.name}&background=0D8ABC&color=fff`,
-                    }}
+                    source={getAvatarSource(
+                      comment.author?.name,
+                      comment.author?.profile?.avatarUrl
+                    )}
                     style={styles.commentAvatar}
                   />
                   <View
                     style={[
-                      styles.commentContent,
-                      { backgroundColor: theme.cardBackground },
+                      styles.commentCard,
+                      {
+                        backgroundColor: theme.cardBackground,
+                        borderColor: theme.border,
+                      },
                     ]}
                   >
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <Text
-                        style={[styles.commentAuthor, { color: theme.text }]}
-                      >
-                        {comment.author?.name}
-                      </Text>
+                    <View style={styles.commentHeader}>
+                      <View>
+                        <Text
+                          style={[styles.commentAuthor, { color: theme.text }]}
+                        >
+                          {comment.author?.name || "Unknown user"}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.commentHandle,
+                            { color: theme.textSecondary },
+                          ]}
+                        >
+                          @{comment.author?.username || "guest"}
+                        </Text>
+                      </View>
+
                       {comment.pinned ? (
                         <View
-                          style={{ flexDirection: "row", alignItems: "center" }}
+                          style={[
+                            styles.pinnedBadge,
+                            {
+                              backgroundColor:
+                                theme.type === "dark"
+                                  ? "rgba(243, 156, 18, 0.18)"
+                                  : "#fff4dd",
+                            },
+                          ]}
                         >
-                          <Ionicons name="pin" size={14} color="#f39c12" />
-                          <Text
-                            style={{
-                              marginLeft: 6,
-                              color: theme.textSecondary,
-                              fontSize: 12,
-                            }}
-                          >
-                            Pinned
-                          </Text>
+                          <Ionicons name="pin" size={12} color="#f39c12" />
+                          <Text style={styles.pinnedText}>Pinned</Text>
                         </View>
                       ) : null}
                     </View>
+
                     <Text
-                      style={[
-                        styles.commentText,
-                        { color: theme.textSecondary },
-                      ]}
+                      style={[styles.commentText, { color: theme.textSecondary }]}
                     >
                       {comment.content}
                     </Text>
 
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        marginTop: 8,
-                        alignItems: "center",
-                      }}
-                    >
+                    <View style={styles.commentActions}>
                       <TouchableOpacity
                         onPress={() => handleCommentLike(comment.id)}
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          marginRight: 16,
-                        }}
+                        style={styles.commentAction}
                       >
                         <Ionicons
                           name={comment.isLiked ? "heart" : "heart-outline"}
                           size={18}
                           color={
-                            comment.isLiked ? "#e74c3c" : theme.iconSecondary
+                            comment.isLiked ? theme.danger : theme.iconSecondary
                           }
                         />
                         <Text
-                          style={{ marginLeft: 6, color: theme.textSecondary }}
+                          style={[
+                            styles.commentActionText,
+                            { color: theme.textSecondary },
+                          ]}
                         >
-                          {comment.likeCount || 0}
+                          {formatCount(comment.likeCount || 0)}
                         </Text>
                       </TouchableOpacity>
 
-                      {/* Pin button visible only to post author */}
                       {user && user.id === activePostAuthorId ? (
                         <TouchableOpacity
                           onPress={() => handlePinComment(comment.id)}
-                          style={{ flexDirection: "row", alignItems: "center" }}
+                          style={styles.commentAction}
                         >
                           <Ionicons
                             name={comment.pinned ? "pin" : "pin-outline"}
@@ -551,10 +738,10 @@ export default function Home({ user, onLogout, navigation }) {
                             }
                           />
                           <Text
-                            style={{
-                              marginLeft: 6,
-                              color: theme.textSecondary,
-                            }}
+                            style={[
+                              styles.commentActionText,
+                              { color: theme.textSecondary },
+                            ]}
                           >
                             {comment.pinned ? "Unpin" : "Pin"}
                           </Text>
@@ -570,15 +757,24 @@ export default function Home({ user, onLogout, navigation }) {
           <View
             style={[
               styles.commentInputContainer,
-              { borderTopColor: theme.border },
+              {
+                borderTopColor: theme.border,
+                paddingBottom: Math.max(insets.bottom, 12),
+                backgroundColor: theme.background,
+              },
             ]}
           >
             <TextInput
               style={[
                 styles.commentInput,
-                { backgroundColor: theme.inputBackground, color: theme.text },
+                {
+                  backgroundColor:
+                    theme.type === "dark" ? theme.surface : "#f4f7fb",
+                  color: theme.text,
+                  borderColor: theme.border,
+                },
               ]}
-              placeholder="Add a comment..."
+              placeholder="Add a thoughtful reply..."
               placeholderTextColor={theme.textSecondary}
               value={newComment}
               onChangeText={setNewComment}
@@ -587,12 +783,15 @@ export default function Home({ user, onLogout, navigation }) {
             <TouchableOpacity
               style={[
                 styles.sendButton,
-                !newComment.trim() && styles.sendButtonDisabled,
+                {
+                  backgroundColor: theme.primary,
+                  opacity: newComment.trim() ? 1 : 0.5,
+                },
               ]}
               onPress={submitComment}
               disabled={!newComment.trim()}
             >
-              <Ionicons name="send" size={20} color="#fff" />
+              <Ionicons name="send" size={18} color={theme.onPrimary} />
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -604,244 +803,393 @@ export default function Home({ user, onLogout, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f6f7fb",
   },
   topBar: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#fff",
+    paddingHorizontal: 20,
+    paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#e6e9ef",
   },
   topBarLeft: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
-  },
-  time: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#111",
     marginRight: 12,
   },
-  backButton: {
-    marginRight: 8,
-  },
-  backIcon: {
-    fontSize: 20,
-    color: "#111",
-  },
-  logoContainer: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#FFD700",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 8,
-  },
-  logoIcon: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#111",
+  brandLogo: {
+    width: 40,
+    height: 40,
+    marginRight: 12,
   },
   appName: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#111",
-    letterSpacing: 0.5,
+    fontSize: 18,
+    fontWeight: "800",
+    letterSpacing: 0.2,
   },
-  statusIcons: {
-    flexDirection: "row",
-  },
-  statusIcon: {
-    fontSize: 14,
+  appSubtitle: {
+    marginTop: 2,
+    fontSize: 13,
   },
   scrollView: {
     flex: 1,
   },
-  postSection: {
-    backgroundColor: "#fff",
-    padding: 16,
-    marginTop: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e6e9ef",
+  scrollContent: {
+    paddingHorizontal: 18,
+    paddingTop: 18,
   },
-
-  postCard: {
-    backgroundColor: "#f9fafb",
+  heroCard: {
+    borderRadius: 26,
+    padding: 22,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  heroContent: {
+    marginBottom: 18,
+  },
+  heroEyebrow: {
+    fontSize: 13,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: 10,
+  },
+  heroTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    lineHeight: 30,
+    marginBottom: 10,
+  },
+  heroText: {
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  heroButton: {
+    height: 48,
     borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
+    alignSelf: "flex-start",
+    paddingHorizontal: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    shadowOpacity: 0.22,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 18,
+    elevation: 5,
+  },
+  heroButtonText: {
+    marginLeft: 8,
+    fontWeight: "700",
+    fontSize: 15,
+  },
+  composerCard: {
+    borderRadius: 22,
+    borderWidth: 1,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 22,
+  },
+  composerAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginRight: 14,
+  },
+  composerContent: {
+    flex: 1,
+    marginRight: 12,
+  },
+  composerPrompt: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  composerSubtext: {
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  composerAction: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+  },
+  sectionSubtitle: {
+    marginTop: 4,
+    fontSize: 13,
+  },
+  refreshText: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  centerStateCard: {
+    borderRadius: 22,
+    borderWidth: 1,
+    paddingVertical: 28,
+    paddingHorizontal: 22,
+    alignItems: "center",
+  },
+  stateIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  stateTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 6,
+  },
+  stateText: {
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: "center",
+    marginTop: 10,
+  },
+  postCard: {
+    borderRadius: 22,
+    borderWidth: 1,
+    padding: 18,
+    marginBottom: 16,
   },
   postHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 16,
   },
-  postHeaderLeft: {
+  postIdentity: {
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
     marginRight: 12,
   },
-  postTitle: {
-    fontSize: 20,
+  postAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginRight: 12,
+    borderWidth: 2,
+  },
+  postMeta: {
+    flex: 1,
+  },
+  postAuthor: {
+    fontSize: 16,
     fontWeight: "700",
-    color: "#111",
-    marginBottom: 8,
+    marginBottom: 3,
   },
-  postDescription: {
-    fontSize: 14,
-    color: "#666",
-    lineHeight: 20,
+  postHandle: {
+    fontSize: 13,
   },
-  postIcons: {
-    alignItems: "flex-end",
-  },
-  postIcon: {
-    marginBottom: 8,
-  },
-  imageCardsContainer: {
+  badge: {
     flexDirection: "row",
-    height: 120,
-    position: "relative",
+    alignItems: "center",
+    borderRadius: 999,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
   },
-  imageCard: {
-    position: "absolute",
-    width: 100,
-    height: 120,
-    borderRadius: 12,
-    overflow: "hidden",
+  badgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginLeft: 6,
   },
-  imageCard1: {
-    left: 0,
-    zIndex: 1,
+  postContent: {
+    fontSize: 15,
+    lineHeight: 24,
+    fontWeight: "500",
   },
-  imageCard2: {
-    left: 50,
-    zIndex: 2,
+  postFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 18,
+    paddingTop: 14,
+    borderTopWidth: 1,
   },
-  imageCard3: {
-    left: 100,
-    zIndex: 3,
-  },
-  imagePlaceholder: {
-    width: "100%",
-    height: "100%",
-    backgroundColor: "#e0e0e0",
-    justifyContent: "center",
+  actionItem: {
+    flexDirection: "row",
     alignItems: "center",
   },
-
+  actionText: {
+    marginLeft: 8,
+    fontSize: 14,
+    fontWeight: "600",
+  },
   bottomNav: {
     flexDirection: "row",
+    alignItems: "flex-end",
     justifyContent: "space-around",
-    alignItems: "center",
     position: "absolute",
-    bottom: 24,
-    width: "90%",
-    alignSelf: "center",
-    borderRadius: 30,
-    paddingVertical: 12,
+    left: 16,
+    right: 16,
+    bottom: 16,
+    borderRadius: 28,
+    paddingTop: 14,
+    paddingHorizontal: 10,
+    borderWidth: 1,
     shadowColor: "#000",
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.14,
     shadowOffset: { width: 0, height: 10 },
     shadowRadius: 20,
-    elevation: 10,
+    elevation: 12,
   },
   navItem: {
     alignItems: "center",
     justifyContent: "center",
+    minWidth: 58,
+  },
+  navLabel: {
+    marginTop: 6,
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  centerNavButton: {
+    marginTop: -30,
   },
   addButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 62,
+    height: 62,
+    borderRadius: 31,
     justifyContent: "center",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 18,
+    elevation: 8,
   },
-  // Modal Styles
   modalContainer: {
     flex: 1,
-    backgroundColor: "#fff",
   },
   modalHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111",
+    fontSize: 20,
+    fontWeight: "800",
+  },
+  modalSubtitle: {
+    fontSize: 13,
+    marginTop: 3,
   },
   commentsList: {
     flex: 1,
-    padding: 16,
   },
-  emptyComments: {
-    textAlign: "center",
-    color: "#666",
-    marginTop: 20,
+  commentsContent: {
+    padding: 18,
+    paddingBottom: 28,
   },
-  commentItem: {
+  commentsEmptyCard: {
+    borderWidth: 1,
+    borderRadius: 22,
+    padding: 24,
+    alignItems: "center",
+  },
+  commentRow: {
     flexDirection: "row",
-    marginBottom: 16,
+    marginBottom: 14,
   },
   commentAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    marginRight: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    marginRight: 10,
+    marginTop: 6,
   },
-  commentContent: {
+  commentCard: {
     flex: 1,
-    backgroundColor: "#f6f7fb",
-    padding: 10,
-    borderRadius: 12,
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 14,
+  },
+  commentHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 8,
   },
   commentAuthor: {
-    fontWeight: "600",
     fontSize: 14,
-    marginBottom: 4,
-    color: "#111",
+    fontWeight: "700",
+  },
+  commentHandle: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  pinnedBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  pinnedText: {
+    marginLeft: 5,
+    color: "#f39c12",
+    fontSize: 12,
+    fontWeight: "700",
   },
   commentText: {
     fontSize: 14,
-    color: "#333",
+    lineHeight: 21,
+  },
+  commentActions: {
+    flexDirection: "row",
+    marginTop: 12,
+  },
+  commentAction: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 18,
+  },
+  commentActionText: {
+    marginLeft: 6,
+    fontSize: 13,
+    fontWeight: "600",
   },
   commentInputContainer: {
     flexDirection: "row",
-    alignItems: "center",
-    padding: 12,
+    alignItems: "flex-end",
+    paddingHorizontal: 18,
+    paddingTop: 14,
     borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
-    paddingBottom: Platform.OS === "ios" ? 30 : 12,
   },
   commentInput: {
     flex: 1,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 20,
+    minHeight: 48,
+    maxHeight: 120,
+    borderRadius: 18,
+    borderWidth: 1,
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 12,
+    fontSize: 14,
     marginRight: 12,
-    fontSize: 16,
-    maxHeight: 100,
   },
   sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#246bff",
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: "center",
     alignItems: "center",
-  },
-  sendButtonDisabled: {
-    backgroundColor: "#ccc",
   },
 });

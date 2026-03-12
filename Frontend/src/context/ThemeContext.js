@@ -13,7 +13,7 @@ export const lightTheme = {
   cardBackground: "#ffffff",
   icon: "#2c3e50",
   iconSecondary: "#95a5a6",
-  inputBackground: "transparent",
+  inputBackground: "#f4f7fb",
   inputBorder: "#ced4da",
   primary: "#19be64", // Adjusted for green aesthetic
   secondary: "#6dfe9c", 
@@ -34,7 +34,7 @@ export const darkTheme = {
   cardBackground: "#091328", // surface_container_low
   icon: "#dee5ff",
   iconSecondary: "#a3aac4",
-  inputBackground: "transparent",
+  inputBackground: "#0f1930",
   inputBorder: "#6d758c", // outline
   primary: "#6dfe9c", // Bioluminescent Green
   secondary: "#19be64", // primary_container
