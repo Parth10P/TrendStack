@@ -4,44 +4,44 @@ const ThemeContext = createContext();
 
 export const lightTheme = {
   type: "light",
-  background: "#f4f6f9", // Slight cool grey tint
+  background: "#f8f9fa",
   surface: "#ffffff",
-  surfaceHighlight: "#f8f9fa",
+  surfaceHighlight: "#e9ecef",
   text: "#1a1b1e",
   textSecondary: "#6c757d",
-  border: "#eaecef",
+  border: "#ced4da",
   cardBackground: "#ffffff",
   icon: "#2c3e50",
   iconSecondary: "#95a5a6",
-  inputBackground: "#f8f9fa",
+  inputBackground: "transparent",
   inputBorder: "#ced4da",
-  primary: "#246bff", // Keep brand blue
-  secondary: "#6c5ce7", // Accent purple
+  primary: "#19be64", // Adjusted for green aesthetic
+  secondary: "#6dfe9c", 
   success: "#00b894",
   danger: "#d63031",
   onPrimary: "#ffffff",
-  gradient: ["#246bff", "#6c5ce7"], // Blue to Purple
+  gradient: ["#19be64", "#0b8a4f"], 
 };
 
 export const darkTheme = {
   type: "dark",
-  background: "#0f1115", // Very dark blue-grey, not pure black
-  surface: "#181a20",
-  surfaceHighlight: "#262a34",
-  text: "#ffffff",
-  textSecondary: "#a0a0a0",
-  border: "#2d3436",
-  cardBackground: "#181a20",
-  icon: "#dfe6e9",
-  iconSecondary: "#636e72",
-  inputBackground: "#262a34",
-  inputBorder: "#353b48",
-  primary: "#246bff",
-  secondary: "#a29bfe",
-  success: "#00cec9",
-  danger: "#ff7675",
-  onPrimary: "#ffffff",
-  gradient: ["#246bff", "#a29bfe"],
+  background: "#060e20", // Bioluminescent Base
+  surface: "#0f1930", // surface_container
+  surfaceHighlight: "#141f38", // surface_container_high
+  text: "#dee5ff", // on_surface
+  textSecondary: "#a3aac4", // on_surface_variant
+  border: "#40485d", // outline_variant at low opacity
+  cardBackground: "#091328", // surface_container_low
+  icon: "#dee5ff",
+  iconSecondary: "#a3aac4",
+  inputBackground: "transparent",
+  inputBorder: "#6d758c", // outline
+  primary: "#6dfe9c", // Bioluminescent Green
+  secondary: "#19be64", // primary_container
+  success: "#5def8f",
+  danger: "#ff716c",
+  onPrimary: "#005f2e",
+  gradient: ["#19be64", "#6dfe9c"], // 135deg glow equivalent
 };
 
 export const ThemeProvider = ({ children }) => {

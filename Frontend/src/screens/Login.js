@@ -140,8 +140,8 @@ export default function Login({ onSignInSuccess }) {
       <LinearGradient
         colors={
           theme.type === "dark"
-            ? ["#121212", "#1a1b1e", "#000000"]
-            : ["#f4f6f9", "#e2e6ea", "#dbe0e6"]
+            ? ["#060e20", "#091328", "#060e20"]
+            : ["#f8f9fa", "#e9ecef", "#dee2e6"]
         }
         style={StyleSheet.absoluteFill}
       />
@@ -163,7 +163,7 @@ export default function Login({ onSignInSuccess }) {
             <View style={styles.brandSection}>
               <View style={styles.logoContainer}>
                 <Image
-                  source={require("../../assets/icon.png")}
+                  source={require("../../assets/trendStack_logo.png")}
                   style={styles.logo}
                   resizeMode="contain"
                 />
@@ -187,7 +187,7 @@ export default function Login({ onSignInSuccess }) {
                 {
                   backgroundColor:
                     theme.type === "dark"
-                      ? "rgba(30,30,30,0.7)"
+                      ? "rgba(15, 25, 48, 0.6)"
                       : "rgba(255,255,255,0.8)",
                 },
               ]}
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
     width: 300,
     height: 300,
     borderRadius: 150,
-    backgroundColor: "rgba(36, 107, 255, 0.15)",
+    backgroundColor: "rgba(109, 254, 156, 0.05)",
   },
   decorationCircle2: {
     position: "absolute",
@@ -504,7 +504,7 @@ const styles = StyleSheet.create({
     width: 350,
     height: 350,
     borderRadius: 175,
-    backgroundColor: "rgba(108, 92, 231, 0.1)",
+    backgroundColor: "rgba(25, 190, 100, 0.05)",
   },
 
   brandSection: {
@@ -525,9 +525,9 @@ const styles = StyleSheet.create({
     borderRadius: 24,
   },
   brandTitle: {
-    fontSize: 32,
+    fontSize: 40,
     fontWeight: "800",
-    letterSpacing: 0.5,
+    letterSpacing: -0.5,
     marginBottom: 8,
   },
   brandSubtitle: {
@@ -539,7 +539,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 24,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
+    borderColor: "rgba(255,255,255,0.05)",
     overflow: "hidden",
   },
 
@@ -578,9 +578,10 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    borderRadius: 14,
-    paddingHorizontal: 16,
+    borderWidth: 0,
+    borderBottomWidth: 1,
+    borderRadius: 0,
+    paddingHorizontal: 8,
     height: 56,
     marginBottom: 16,
   },
@@ -594,14 +595,14 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     height: 56,
-    borderRadius: 14,
+    borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 8,
-    shadowColor: "#246bff",
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 16,
+    marginTop: 16,
+    shadowColor: "#6dfe9c",
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 20,
     elevation: 8,
   },
   buttonDisabled: {

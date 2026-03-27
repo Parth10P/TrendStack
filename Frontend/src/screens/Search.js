@@ -99,7 +99,7 @@ export default function Search({ navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={theme.icon} />
         </TouchableOpacity>
-        <View style={[styles.searchBar, { backgroundColor: theme.cardBackground }]}>
+        <View style={[styles.searchBar, { borderBottomColor: theme.border, backgroundColor: 'transparent' }]}>
           <Ionicons name="search" size={20} color={theme.iconSecondary} style={styles.searchIcon} />
           <TextInput
             style={[styles.searchInput, { color: theme.text }]}
@@ -202,10 +202,10 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f6f7fb",
-    borderRadius: 8,
+    borderBottomWidth: 1,
+    borderRadius: 0,
     marginLeft: 12,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     height: 40,
   },
   searchIcon: {
@@ -228,7 +228,6 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: "#246bff",
   },
   tabText: {
     fontSize: 16,

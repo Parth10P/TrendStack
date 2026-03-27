@@ -4,11 +4,11 @@
     "slug": "trend_stack",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/trendStack_logo.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/trendStack_logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },

@@ -98,13 +98,13 @@ export default function CreatePost({ visible, onClose, onPostCreated }) {
           <Text style={[styles.headerTitle, { color: theme.text }]}>Create Post</Text>
           <TouchableOpacity
             onPress={handleCreatePost}
-            style={[styles.postButton, isLoading && styles.postButtonDisabled]}
+            style={[styles.postButton, { backgroundColor: theme.primary, shadowColor: theme.primary, shadowOpacity: 0.25, shadowOffset: { width: 0, height: 4 }, shadowRadius: 8 }, isLoading && styles.postButtonDisabled]}
             disabled={isLoading}
           >
             {isLoading ? (
-              <ActivityIndicator size="small" color="#fff" />
+              <ActivityIndicator size="small" color={theme.onPrimary} />
             ) : (
-              <Text style={styles.postButtonText}>Post</Text>
+              <Text style={[styles.postButtonText, { color: theme.onPrimary }]}>Post</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#4CAF50",
     paddingHorizontal: 20,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 8,
   },
   postButtonDisabled: {
     opacity: 0.6,

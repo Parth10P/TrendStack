@@ -19,7 +19,7 @@ import { useTheme } from "../context/ThemeContext";
 import { userAPI } from "../services/api";
 import { LinearGradient } from "expo-linear-gradient";
 
-import darkModeProfileLogo from "../../assets/dark_mode_profile_logo.png";
+import darkModeProfileLogo from "../../assets/trendStack_logo.png";
 
 export default function ProfileScreen({ navigation, user, onLogout }) {
   const { theme, isDarkMode, toggleTheme } = useTheme();
@@ -359,16 +359,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statValue: {
-    fontSize: 20,
-    fontWeight: "700",
+    fontSize: 28,
+    fontWeight: "800",
+    letterSpacing: -0.5,
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
   },
   statDivider: {
-    width: 1,
-    height: 30,
+    width: 0,
+    height: 0,
   },
   editAvatarButton: {
     position: "absolute",
@@ -446,8 +447,9 @@ const styles = StyleSheet.create({
   actionButton: {
     backgroundColor: "#f6f7fb",
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 8,
     alignItems: "center",
+    justifyContent: "center",
     marginBottom: 12,
   },
   actionButtonText: {
@@ -495,7 +497,7 @@ const styles = StyleSheet.create({
   saveButton: {
     backgroundColor: "#246bff",
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 8,
     alignItems: "center",
     marginTop: 12,
   },

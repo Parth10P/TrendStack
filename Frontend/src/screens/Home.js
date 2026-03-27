@@ -175,11 +175,7 @@ export default function Home({ user, onLogout, navigation }) {
       >
         <View style={styles.topBarLeft}>
           <Image
-            source={
-              theme.type === "dark"
-                ? require("../../assets/icon_dark.png")
-                : require("../../assets/icon_light.png")
-            }
+            source={require("../../assets/trendStack_logo.png")}
             style={{ width: 32, height: 32, marginRight: 8 }}
             resizeMode="contain"
           />
@@ -233,8 +229,6 @@ export default function Home({ user, onLogout, navigation }) {
                   styles.postCard,
                   {
                     backgroundColor: theme.cardBackground,
-                    shadowColor: theme.type === "dark" ? "#000" : "#ccc",
-                    shadowOpacity: theme.type === "dark" ? 0.3 : 0.4,
                   },
                 ]}
               >
@@ -313,12 +307,12 @@ export default function Home({ user, onLogout, navigation }) {
                     <Ionicons
                       name={post.isLiked ? "heart" : "heart-outline"}
                       size={26}
-                      color={post.isLiked ? "#ff3b30" : theme.iconSecondary}
+                      color={post.isLiked ? theme.danger : theme.iconSecondary}
                     />
                     <Text
                       style={{
                         marginLeft: 8,
-                        color: theme.textSecondary,
+                        color: post.isLiked ? theme.primary : theme.textSecondary,
                         fontSize: 15,
                         fontWeight: "600",
                       }}
@@ -373,14 +367,13 @@ export default function Home({ user, onLogout, navigation }) {
         style={[
           styles.bottomNav,
           {
-            paddingBottom: insets.bottom,
-            backgroundColor: theme.background,
-            borderTopColor: theme.border,
+            paddingBottom: Platform.OS === 'ios' ? Math.max(insets.bottom / 2, 12) : 12,
+            backgroundColor: theme.type === 'dark' ? "rgba(15, 25, 48, 0.92)" : "rgba(255, 255, 255, 0.92)",
           },
         ]}
       >
         <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="home" size={26} color="#4CAF50" />
+          <Ionicons name="home" size={26} color={theme.primary} />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.navItem}
@@ -396,8 +389,8 @@ export default function Home({ user, onLogout, navigation }) {
           style={styles.navItem}
           onPress={() => setShowCreatePost(true)}
         >
-          <View style={styles.addButton}>
-            <Ionicons name="add" size={28} color="#fff" />
+          <View style={[styles.addButton, { backgroundColor: theme.primary, shadowColor: theme.primary, shadowOpacity: 0.3, shadowOffset: { width: 0, height: 4 }, shadowRadius: 8 }]}>
+            <Ionicons name="add" size={28} color={theme.onPrimary} />
           </View>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem}>
@@ -680,8 +673,9 @@ const styles = StyleSheet.create({
 
   postCard: {
     backgroundColor: "#f9fafb",
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
   },
   postHeader: {
     flexDirection: "row",
@@ -693,7 +687,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   postTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "700",
     color: "#111",
     marginBottom: 8,
@@ -745,21 +739,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    backgroundColor: "#fff",
+    position: "absolute",
+    bottom: 24,
+    width: "90%",
+    alignSelf: "center",
+    borderRadius: 30,
     paddingVertical: 12,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#e6e9ef",
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 20,
+    elevation: 10,
   },
   navItem: {
     alignItems: "center",
     justifyContent: "center",
   },
   addButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: "#4CAF50",
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     justifyContent: "center",
     alignItems: "center",
   },
