@@ -62,6 +62,20 @@ export default function Search({ navigation }) {
     }
   };
 
+  const handleOpenUser = (item) => {
+    navigation.navigate("UserProfile", {
+      userId: item.id,
+      initialUser: item,
+    });
+  };
+
+  const handleOpenPost = (item) => {
+    navigation.navigate("PostDetails", {
+      postId: item.id,
+      initialPost: item,
+    });
+  };
+
   const renderUserItem = ({ item }) => (
     <TouchableOpacity
       style={[
@@ -72,6 +86,7 @@ export default function Search({ navigation }) {
         },
       ]}
       activeOpacity={0.88}
+      onPress={() => handleOpenUser(item)}
     >
       <Image
         source={getAvatarSource(item.name, item.profile?.avatarUrl)}
@@ -109,6 +124,7 @@ export default function Search({ navigation }) {
         },
       ]}
       activeOpacity={0.88}
+      onPress={() => handleOpenPost(item)}
     >
       <View style={styles.postHeader}>
         <View style={styles.postAuthorWrap}>

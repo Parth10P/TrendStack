@@ -2,6 +2,7 @@ const {
   createPost,
   getAllPosts,
   searchPosts,
+  getPostDetails,
   toggleLike,
   addComment,
   getComments,
@@ -63,6 +64,17 @@ async function search(req, res) {
     return res.status(200).json(posts);
   } catch (error) {
     return res.status(500).json({ err: "Search failed" });
+  }
+}
+
+async function getPost(req, res) {
+  try {
+    const { id } = req.params;
+    const post = await getPostDetails(id, req.userId);
+    return res.status(200).json(post);
+  } catch (error) {
+    const code = error.statusCode || 500;
+    return res.status(code).json({ err: error.message || "Failed to get post" });
   }
 }
 
@@ -136,6 +148,7 @@ module.exports = {
   create,
   getAll,
   search,
+  getPost,
   likePost,
   commentOnPost,
   getPostComments,

@@ -269,10 +269,50 @@ async function searchPosts(query) {
   return posts;
 }
 
+async function getPostDetails(postId, currentUserId) {
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    include: {
+      author: {
+        select: {
+          id: true,
+          name: true,
+          username: true,
+          profile: {
+            select: {
+              avatarUrl: true,
+              bio: true,
+            },
+          },
+        },
+      },
+      likes: currentUserId
+        ? {
+            where: { userId: currentUserId },
+            select: { userId: true },
+          }
+        : false,
+    },
+  });
+
+  if (!post) {
+    const err = new Error("Post not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  return {
+    ...post,
+    isLiked: Boolean(post.likes && post.likes.length > 0),
+    likes: undefined,
+  };
+}
+
 module.exports = {
   createPost,
   getAllPosts,
   searchPosts,
+  getPostDetails,
   toggleLike,
   addComment,
   getComments,

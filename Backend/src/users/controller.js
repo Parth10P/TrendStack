@@ -1,4 +1,9 @@
-const { signUp, login: loginService, searchUsers } = require("./service");
+const {
+  signUp,
+  login: loginService,
+  searchUsers,
+  getUserById,
+} = require("./service");
 
 async function create(req, res) {
   try {
@@ -59,4 +64,15 @@ async function search(req, res) {
   }
 }
 
-module.exports = { create, login, logout, search };
+async function getUser(req, res) {
+  try {
+    const { id } = req.params;
+    const user = await getUserById(id);
+    return res.status(200).json(user);
+  } catch (error) {
+    const code = error.statusCode || 500;
+    return res.status(code).json({ err: error.message || "Failed to get user" });
+  }
+}
+
+module.exports = { create, login, logout, search, getUser };

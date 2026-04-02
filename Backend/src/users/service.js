@@ -75,4 +75,37 @@ async function searchUsers(query) {
   return users;
 }
 
-module.exports = { signUp, login, searchUsers };
+async function getUserById(userId) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      username: true,
+      createdAt: true,
+      profile: {
+        select: {
+          avatarUrl: true,
+          bio: true,
+          location: true,
+        },
+      },
+      _count: {
+        select: {
+          posts: true,
+          comments: true,
+        },
+      },
+    },
+  });
+
+  if (!user) {
+    const err = new Error("User not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  return user;
+}
+
+module.exports = { signUp, login, searchUsers, getUserById };

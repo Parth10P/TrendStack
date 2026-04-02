@@ -5,6 +5,7 @@ const {
   create,
   getAll,
   search,
+  getPost,
   likePost,
   commentOnPost,
   getPostComments,
@@ -22,6 +23,7 @@ router.post("/", requireAuth, createPostMiddleware, create);
 // Get all posts (for feed) - requireAuth is used to get current user for like status
 router.get("/", requireAuth, getAll);
 router.get("/search", search);
+router.get("/:id", getPost);
 router.post("/:id/like", requireAuth, likePost);
 router.post("/:id/comments", requireAuth, commentOnPost);
 router.get("/:id/comments", getPostComments);

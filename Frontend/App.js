@@ -11,6 +11,8 @@ import Login from "./src/screens/Login";
 import Home from "./src/screens/Home";
 import ProfileScreen from "./src/screens/ProfileScreen";
 import Search from "./src/screens/Search";
+import UserProfileScreen from "./src/screens/UserProfileScreen";
+import PostDetailsScreen from "./src/screens/PostDetailsScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -58,6 +60,8 @@ export default function App() {
                     )}
                   </Stack.Screen>
                   <Stack.Screen name="Search" component={Search} />
+                  <Stack.Screen name="UserProfile" component={UserProfileScreen} />
+                  <Stack.Screen name="PostDetails" component={PostDetailsScreen} />
                 </>
               )}
             </Stack.Navigator>

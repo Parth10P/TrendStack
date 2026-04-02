@@ -75,8 +75,13 @@ export const userAPI = {
     return apiRequest(
       "/users",
       `/search?q=${encodeURIComponent(query)}`,
+      "GET",
       null
     );
+  },
+
+  async getUserById(userId) {
+    return apiRequest("/users", `/${userId}`, "GET", null);
   },
 
   // Update profile
@@ -105,6 +110,10 @@ export const postAPI = {
       "GET",
       null
     );
+  },
+
+  async getPostById(postId) {
+    return apiRequest("/posts", `/${postId}`, "GET", null);
   },
 
   // Toggle like
