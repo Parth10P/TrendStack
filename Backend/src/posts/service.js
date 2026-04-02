@@ -7,7 +7,7 @@ async function createPost(data) {
   // Create the post
   const post = await prisma.post.create({
     data: {
-      authorId: parseInt(authorId),
+      authorId: authorId,
       content,
       attachments: attachments || null,
     },
@@ -46,7 +46,7 @@ async function getAllPosts(currentUserId) {
       },
       likes: {
         where: {
-          userId: currentUserId ? parseInt(currentUserId) : -1,
+          userId: currentUserId || "000000000000000000000000",
         },
         select: {
           userId: true,
@@ -64,8 +64,8 @@ async function getAllPosts(currentUserId) {
 }
 
 async function toggleLike(postId, userId) {
-  const pId = parseInt(postId);
-  const uId = parseInt(userId);
+  const pId = postId;
+  const uId = userId;
 
   // Check if like exists
   const existingLike = await prisma.like.findUnique({
@@ -113,8 +113,8 @@ async function toggleLike(postId, userId) {
 }
 
 async function addComment(postId, userId, content) {
-  const pId = parseInt(postId);
-  const uId = parseInt(userId);
+  const pId = postId;
+  const uId = userId;
 
   const [comment] = await prisma.$transaction([
     prisma.comment.create({
@@ -145,7 +145,7 @@ async function addComment(postId, userId, content) {
 
 async function getComments(postId, currentUserId) {
   const comments = await prisma.comment.findMany({
-    where: { postId: parseInt(postId) },
+    where: { postId: postId },
     orderBy: { createdAt: "desc" },
     include: {
       author: {
@@ -158,7 +158,7 @@ async function getComments(postId, currentUserId) {
       },
       commentLikes: currentUserId
         ? {
-            where: { userId: parseInt(currentUserId) },
+            where: { userId: currentUserId },
             select: { userId: true },
           }
         : false,
@@ -175,8 +175,8 @@ async function getComments(postId, currentUserId) {
 
 // Toggle like on a comment
 async function toggleCommentLike(commentId, userId) {
-  const cId = parseInt(commentId);
-  const uId = parseInt(userId);
+  const cId = commentId;
+  const uId = userId;
 
   const existing = await prisma.commentLike.findUnique({
     where: {
@@ -219,8 +219,8 @@ async function toggleCommentLike(commentId, userId) {
 
 // Pin/unpin a comment. Only the author of the post can pin comments under their post.
 async function togglePinComment(commentId, userId) {
-  const cId = parseInt(commentId);
-  const uId = parseInt(userId);
+  const cId = commentId;
+  const uId = userId;
 
   const comment = await prisma.comment.findUnique({
     where: { id: cId },
@@ -285,24 +285,24 @@ module.exports = {
 };
 
 async function getPostById(id) {
-  return await prisma.post.findUnique({ where: { id: parseInt(id) } });
+  return await prisma.post.findUnique({ where: { id: id } });
 }
 
 async function getCommentById(id) {
-  return await prisma.comment.findUnique({ where: { id: parseInt(id) } });
+  return await prisma.comment.findUnique({ where: { id: id } });
 }
 
 // Delete a post
 async function deletePostById(postId) {
   return await prisma.post.delete({
-    where: { id: parseInt(postId) },
+    where: { id: postId },
   });
 }
 
 // Delete a comment
 async function deleteCommentById(commentId, postId) {
-  const cId = parseInt(commentId);
-  const pId = parseInt(postId);
+  const cId = commentId;
+  const pId = postId;
 
   const [comment] = await prisma.$transaction([
     prisma.comment.delete({

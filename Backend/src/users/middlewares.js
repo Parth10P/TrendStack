@@ -29,7 +29,7 @@ async function requireAuth(req, res, next) {
   }
 
   try {
-    const user = await prisma.user.findUnique({ where: { id: parseInt(userId) } });
+    const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       return res.status(401).json({ err: "User not found" });
     }

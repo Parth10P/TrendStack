@@ -1,17 +1,16 @@
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
 // Models for TrendStack app: users, profiles, posts, comments, likes
 
 model User {
-  id         Int       @id @default(autoincrement())
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
   name       String
   username   String    @unique
   email      String    @unique
@@ -31,9 +30,9 @@ model User {
 }
 
 model Profile {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    Int      @unique
+  userId    String   @unique @db.ObjectId
   name      String?
   bio       String?
   avatarUrl String?
@@ -46,11 +45,11 @@ model Profile {
 }
 
 model Post {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
   author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  authorId    Int
-  content     String   @db.Text
-  // optional JSON field for images/media; MySQL supports JSON
+  authorId    String   @db.ObjectId
+  content     String   
+  // optional JSON field for images/media
   attachments Json?
   likeCount   Int      @default(0)
   commentCount Int     @default(0)
@@ -66,17 +65,17 @@ model Post {
 }
 
 model Comment {
-  id         Int      @id @default(autoincrement())
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
   post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId     Int
+  postId     String   @db.ObjectId
   author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  authorId   Int
-  content    String   @db.Text
-  likeCount   Int      @default(0)
-  pinned      Boolean  @default(false)
+  authorId   String   @db.ObjectId
+  content    String   
+  likeCount  Int      @default(0)
+  pinned     Boolean  @default(false)
   commentLikes CommentLike[]
-  parentId   Int?
-  parent     Comment? @relation("CommentToComment", fields: [parentId], references: [id], onDelete: Cascade)
+  parentId   String?  @db.ObjectId
+  parent     Comment? @relation("CommentToComment", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   replies    Comment[] @relation("CommentToComment")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -86,11 +85,11 @@ model Comment {
 }
 
 model Like {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId    Int
+  postId    String   @db.ObjectId
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    Int
+  userId    String   @db.ObjectId
   createdAt DateTime @default(now())
 
   @@unique([postId, userId])
@@ -100,15 +99,14 @@ model Like {
 
 // Likes specific to comments
 model CommentLike {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
-  commentId Int
+  commentId String   @db.ObjectId
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    Int
+  userId    String   @db.ObjectId
   createdAt DateTime @default(now())
 
   @@unique([commentId, userId])
   @@index([userId])
   @@map("comment_likes")
 }
-
