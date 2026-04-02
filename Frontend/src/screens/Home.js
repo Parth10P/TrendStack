@@ -234,48 +234,6 @@ export default function Home({ user, onLogout, navigation }) {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <LinearGradient
-          colors={
-            theme.type === "dark"
-              ? ["rgba(109, 254, 156, 0.14)", "rgba(9, 19, 40, 0.95)"]
-              : ["#e8fff1", "#ffffff"]
-          }
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[
-            styles.heroCard,
-            {
-              borderColor: theme.border,
-              backgroundColor: theme.cardBackground,
-            },
-          ]}
-        >
-          <View style={styles.heroContent}>
-            <Text style={[styles.heroEyebrow, { color: theme.primary }]}>
-              Daily pulse
-            </Text>
-            <Text style={[styles.heroTitle, { color: theme.text }]}>
-              Share a post, join a conversation, or catch the next trend early.
-            </Text>
-            <Text style={[styles.heroText, { color: theme.textSecondary }]}>
-              Your feed is ready for quick updates, thoughtful comments, and
-              blog-style posts.
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[
-              styles.heroButton,
-              { backgroundColor: theme.primary, shadowColor: theme.primary },
-            ]}
-            onPress={() => setShowCreatePost(true)}
-          >
-            <Ionicons name="create-outline" size={18} color={theme.onPrimary} />
-            <Text style={[styles.heroButtonText, { color: theme.onPrimary }]}>
-              Write a post
-            </Text>
-          </TouchableOpacity>
-        </LinearGradient>
-
         <TouchableOpacity
           style={[
             styles.composerCard,
@@ -414,26 +372,7 @@ export default function Home({ user, onLogout, navigation }) {
                     </Text>
                   </View>
                 </View>
-                <View
-                  style={[
-                    styles.badge,
-                    {
-                      backgroundColor:
-                        theme.type === "dark" ? theme.surface : "#f4f8fb",
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name="trending-up-outline"
-                    size={14}
-                    color={theme.primary}
-                  />
-                  <Text style={[styles.badgeText, { color: theme.textSecondary }]}>
-                    Trending
-                  </Text>
-                </View>
               </View>
-
               <Text style={[styles.postContent, { color: theme.text }]}>
                 {post.content}
               </Text>
@@ -838,49 +777,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 18,
     paddingTop: 18,
-  },
-  heroCard: {
-    borderRadius: 26,
-    padding: 22,
-    borderWidth: 1,
-    marginBottom: 16,
-  },
-  heroContent: {
-    marginBottom: 18,
-  },
-  heroEyebrow: {
-    fontSize: 13,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginBottom: 10,
-  },
-  heroTitle: {
-    fontSize: 24,
-    fontWeight: "800",
-    lineHeight: 30,
-    marginBottom: 10,
-  },
-  heroText: {
-    fontSize: 14,
-    lineHeight: 22,
-  },
-  heroButton: {
-    height: 48,
-    borderRadius: 16,
-    alignSelf: "flex-start",
-    paddingHorizontal: 18,
-    flexDirection: "row",
-    alignItems: "center",
-    shadowOpacity: 0.22,
-    shadowOffset: { width: 0, height: 10 },
-    shadowRadius: 18,
-    elevation: 5,
-  },
-  heroButtonText: {
-    marginLeft: 8,
-    fontWeight: "700",
-    fontSize: 15,
   },
   composerCard: {
     borderRadius: 22,

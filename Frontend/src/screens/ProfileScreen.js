@@ -78,6 +78,24 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
     { label: "Following", value: "380", icon: "person-add-outline" },
   ];
 
+  const infoRows = [
+    {
+      label: "Email",
+      value: displayedUser?.email || "No email added",
+      icon: "mail-outline",
+    },
+    {
+      label: "Username",
+      value: `@${displayedUser?.username || "username"}`,
+      icon: "at-outline",
+    },
+  ];
+
+  const cardBackground =
+    theme.type === "dark" ? theme.cardBackground : theme.cardBackground;
+  const softSurface = theme.type === "dark" ? theme.surface : "#f5f8fc";
+  const mutedSurface = theme.type === "dark" ? "#111d36" : "#edf7f1";
+
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.background }]}
@@ -92,24 +110,24 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
               styles.headerIconButton,
               {
                 borderColor: theme.border,
-                backgroundColor:
-                  theme.type === "dark" ? theme.surface : theme.cardBackground,
+                backgroundColor: softSurface,
               },
             ]}
             onPress={() => navigation.goBack()}
           >
             <Ionicons name="arrow-back" size={20} color={theme.icon} />
           </TouchableOpacity>
+
           <Text style={[styles.headerTitle, { color: theme.text }]}>
             Profile
           </Text>
+
           <TouchableOpacity
             style={[
               styles.headerIconButton,
               {
                 borderColor: theme.border,
-                backgroundColor:
-                  theme.type === "dark" ? theme.surface : theme.cardBackground,
+                backgroundColor: softSurface,
               },
             ]}
             onPress={openEditModal}
@@ -119,45 +137,84 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
         </View>
 
         <LinearGradient
-          colors={theme.gradient || [theme.primary, theme.secondary]}
+          colors={
+            theme.type === "dark"
+              ? ["#18355f", "#1db767"]
+              : ["#2bb673", "#13975e"]
+          }
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.hero}
         >
+          <View style={styles.heroGlowOne} />
+          <View style={styles.heroGlowTwo} />
+
           <View style={styles.heroTop}>
-            <Text style={styles.heroLabel}>Creator space</Text>
+            <View>
+              <Text style={styles.heroLabel}>Creator profile</Text>
+              <Text style={styles.heroTitle}>Make your profile feel alive.</Text>
+            </View>
+
             <TouchableOpacity style={styles.heroChip} onPress={openEditModal}>
-              <Ionicons name="create-outline" size={15} color="#fff" />
+              <Ionicons name="create-outline" size={14} color="#fff" />
               <Text style={styles.heroChipText}>Edit</Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.heroTitle}>Your public identity on TrendStack</Text>
+
           <Text style={styles.heroSubtitle}>
-            Keep your profile polished so people know what you post about.
+            A clean profile helps people trust what you post and follow you
+            faster.
           </Text>
         </LinearGradient>
 
         <View
           style={[
-            styles.profileCard,
+            styles.identityCard,
             {
-              backgroundColor: theme.cardBackground,
+              backgroundColor: cardBackground,
               borderColor: theme.border,
             },
           ]}
         >
-          <Image
-            source={getAvatarSource(
-              displayedUser?.name,
-              displayedUser?.profile?.avatarUrl
-            )}
-            style={[
-              styles.avatar,
-              {
-                borderColor: theme.type === "dark" ? theme.surface : "#ffffff",
-              },
-            ]}
-          />
+          <View style={styles.identityTop}>
+            <View style={styles.avatarWrap}>
+              <Image
+                source={getAvatarSource(
+                  displayedUser?.name,
+                  displayedUser?.profile?.avatarUrl
+                )}
+                style={[
+                  styles.avatar,
+                  {
+                    borderColor:
+                      theme.type === "dark" ? theme.background : "#ffffff",
+                  },
+                ]}
+              />
+              <View
+                style={[
+                  styles.onlineDot,
+                  { borderColor: cardBackground, backgroundColor: "#30d158" },
+                ]}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[
+                styles.editPill,
+                {
+                  backgroundColor: mutedSurface,
+                  borderColor: theme.border,
+                },
+              ]}
+              onPress={openEditModal}
+            >
+              <Ionicons name="brush-outline" size={15} color={theme.primary} />
+              <Text style={[styles.editPillText, { color: theme.primary }]}>
+                Customize
+              </Text>
+            </TouchableOpacity>
+          </View>
 
           <Text style={[styles.name, { color: theme.text }]}>
             {displayedUser?.name || "User"}
@@ -165,24 +222,74 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
           <Text style={[styles.handle, { color: theme.textSecondary }]}>
             @{displayedUser?.username || "username"}
           </Text>
+
           <Text style={[styles.bio, { color: theme.textSecondary }]}>
-            {displayedUser?.profile?.bio || "Digital enthusiast and trend setter"}
+            {displayedUser?.profile?.bio ||
+              "Digital enthusiast and trend setter"}
           </Text>
 
-          <View style={styles.statsContainer}>
+          <View style={styles.metaRow}>
+            <View
+              style={[
+                styles.metaChip,
+                {
+                  backgroundColor: softSurface,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <Ionicons
+                name="sparkles-outline"
+                size={14}
+                color={theme.primary}
+              />
+              <Text style={[styles.metaChipText, { color: theme.textSecondary }]}>
+                Active creator
+              </Text>
+            </View>
+
+            <View
+              style={[
+                styles.metaChip,
+                {
+                  backgroundColor: softSurface,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <Ionicons
+                name="globe-outline"
+                size={14}
+                color={theme.primary}
+              />
+              <Text style={[styles.metaChipText, { color: theme.textSecondary }]}>
+                TrendStack
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.statsGrid}>
             {activityStats.map((item) => (
               <View
                 key={item.label}
                 style={[
                   styles.statCard,
                   {
-                    backgroundColor:
-                      theme.type === "dark" ? theme.surface : "#f8fafc",
+                    backgroundColor: softSurface,
                     borderColor: theme.border,
                   },
                 ]}
               >
-                <Ionicons name={item.icon} size={18} color={theme.primary} />
+                <View
+                  style={[
+                    styles.statIconWrap,
+                    {
+                      backgroundColor: mutedSurface,
+                    },
+                  ]}
+                >
+                  <Ionicons name={item.icon} size={16} color={theme.primary} />
+                </View>
                 <Text style={[styles.statValue, { color: theme.text }]}>
                   {item.value}
                 </Text>
@@ -196,9 +303,9 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
 
         <View
           style={[
-            styles.infoSection,
+            styles.sectionCard,
             {
-              backgroundColor: theme.cardBackground,
+              backgroundColor: cardBackground,
               borderColor: theme.border,
             },
           ]}
@@ -207,36 +314,45 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
             Account details
           </Text>
 
-          <View style={[styles.infoItem, { borderBottomColor: theme.border }]}>
-            <Ionicons name="mail-outline" size={20} color={theme.primary} />
-            <View style={styles.infoTextContainer}>
-              <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>
-                Email
-              </Text>
-              <Text style={[styles.infoValue, { color: theme.text }]}>
-                {displayedUser?.email || "No email added"}
-              </Text>
-            </View>
-          </View>
+          {infoRows.map((item, index) => (
+            <View
+              key={item.label}
+              style={[
+                styles.infoRow,
+                index !== infoRows.length - 1 && {
+                  borderBottomColor: theme.border,
+                  borderBottomWidth: 1,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.infoIconWrap,
+                  {
+                    backgroundColor: mutedSurface,
+                  },
+                ]}
+              >
+                <Ionicons name={item.icon} size={18} color={theme.primary} />
+              </View>
 
-          <View style={styles.infoItem}>
-            <Ionicons name="person-outline" size={20} color={theme.primary} />
-            <View style={styles.infoTextContainer}>
-              <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>
-                Username
-              </Text>
-              <Text style={[styles.infoValue, { color: theme.text }]}>
-                @{displayedUser?.username || "username"}
-              </Text>
+              <View style={styles.infoTextContainer}>
+                <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>
+                  {item.label}
+                </Text>
+                <Text style={[styles.infoValue, { color: theme.text }]}>
+                  {item.value}
+                </Text>
+              </View>
             </View>
-          </View>
+          ))}
         </View>
 
         <View
           style={[
-            styles.settingsSection,
+            styles.sectionCard,
             {
-              backgroundColor: theme.cardBackground,
+              backgroundColor: cardBackground,
               borderColor: theme.border,
             },
           ]}
@@ -245,14 +361,13 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
             Preferences
           </Text>
 
-          <View style={styles.settingItem}>
-            <View style={styles.settingLeft}>
+          <View style={styles.preferenceRow}>
+            <View style={styles.preferenceLeft}>
               <View
                 style={[
-                  styles.settingIconWrap,
+                  styles.infoIconWrap,
                   {
-                    backgroundColor:
-                      theme.type === "dark" ? theme.surface : "#eef8f2",
+                    backgroundColor: mutedSurface,
                   },
                 ]}
               >
@@ -262,12 +377,13 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
                   color={theme.primary}
                 />
               </View>
-              <View>
-                <Text style={[styles.settingLabel, { color: theme.text }]}>
+
+              <View style={styles.preferenceTextWrap}>
+                <Text style={[styles.preferenceTitle, { color: theme.text }]}>
                   Dark mode
                 </Text>
                 <Text
-                  style={[styles.settingHint, { color: theme.textSecondary }]}
+                  style={[styles.preferenceHint, { color: theme.textSecondary }]}
                 >
                   Switch the app mood for day or night use.
                 </Text>
@@ -303,11 +419,11 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
                 backgroundColor:
                   theme.type === "dark"
                     ? "rgba(255, 113, 108, 0.12)"
-                    : "#ffefef",
+                    : "#fff2f2",
                 borderColor:
                   theme.type === "dark"
                     ? "rgba(255, 113, 108, 0.2)"
-                    : "#ffd7d7",
+                    : "#ffd9d9",
               },
             ]}
             onPress={onLogout}
@@ -436,27 +552,62 @@ const styles = StyleSheet.create({
   hero: {
     marginHorizontal: 18,
     marginTop: 18,
-    borderRadius: 28,
-    padding: 20,
+    borderRadius: 30,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 92,
+    overflow: "hidden",
+  },
+  heroGlowOne: {
+    position: "absolute",
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: "rgba(255,255,255,0.10)",
+    top: -40,
+    right: -10,
+  },
+  heroGlowTwo: {
+    position: "absolute",
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    bottom: -30,
+    left: -10,
   },
   heroTop: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     marginBottom: 18,
   },
   heroLabel: {
-    color: "#ffffff",
-    fontSize: 13,
+    color: "rgba(255,255,255,0.86)",
+    fontSize: 12,
     fontWeight: "800",
     textTransform: "uppercase",
-    letterSpacing: 0.8,
+    letterSpacing: 1,
+    marginBottom: 10,
+  },
+  heroTitle: {
+    color: "#ffffff",
+    fontSize: 28,
+    fontWeight: "800",
+    lineHeight: 34,
+    maxWidth: 220,
+  },
+  heroSubtitle: {
+    color: "rgba(255,255,255,0.82)",
+    fontSize: 14,
+    lineHeight: 21,
+    maxWidth: 260,
   },
   heroChip: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 9,
     borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.18)",
   },
@@ -466,75 +617,116 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
   },
-  heroTitle: {
-    color: "#ffffff",
-    fontSize: 26,
-    fontWeight: "800",
-    lineHeight: 32,
-    marginBottom: 8,
-  },
-  heroSubtitle: {
-    color: "rgba(255,255,255,0.82)",
-    fontSize: 14,
-    lineHeight: 21,
-  },
-  profileCard: {
+  identityCard: {
     marginHorizontal: 18,
-    marginTop: -24,
-    borderRadius: 26,
+    marginTop: -56,
+    borderRadius: 28,
     borderWidth: 1,
-    paddingTop: 20,
     paddingHorizontal: 18,
+    paddingTop: 18,
     paddingBottom: 18,
-    alignItems: "center",
+  },
+  identityTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
+  avatarWrap: {
+    position: "relative",
   },
   avatar: {
-    width: 104,
-    height: 104,
-    borderRadius: 52,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     borderWidth: 4,
-    marginTop: -54,
-    marginBottom: 14,
+  },
+  onlineDot: {
+    position: "absolute",
+    right: 4,
+    bottom: 4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 3,
+  },
+  editPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  editPillText: {
+    marginLeft: 6,
+    fontSize: 13,
+    fontWeight: "700",
   },
   name: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "800",
-    marginBottom: 6,
+    marginBottom: 4,
   },
   handle: {
-    fontSize: 14,
+    fontSize: 15,
     marginBottom: 12,
   },
   bio: {
     fontSize: 14,
     lineHeight: 21,
-    textAlign: "center",
-    marginBottom: 18,
-    paddingHorizontal: 6,
+    marginBottom: 14,
   },
-  statsContainer: {
-    width: "100%",
+  metaRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 16,
+  },
+  metaChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 10,
+    marginBottom: 8,
+  },
+  metaChipText: {
+    marginLeft: 6,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  statsGrid: {
     flexDirection: "row",
     justifyContent: "space-between",
   },
   statCard: {
     flex: 1,
     borderWidth: 1,
-    borderRadius: 18,
-    paddingVertical: 14,
+    borderRadius: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
     alignItems: "center",
     marginHorizontal: 4,
   },
+  statIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
+  },
   statValue: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "800",
-    marginTop: 10,
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
   },
-  infoSection: {
+  sectionCard: {
     marginHorizontal: 18,
     marginTop: 18,
     borderRadius: 24,
@@ -544,58 +736,52 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "800",
-    marginBottom: 16,
+    marginBottom: 14,
   },
-  infoItem: {
+  infoRow: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 14,
-    borderBottomWidth: 1,
   },
-  infoTextContainer: {
-    marginLeft: 14,
-    flex: 1,
-  },
-  infoLabel: {
-    fontSize: 12,
-    marginBottom: 4,
-  },
-  infoValue: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  settingsSection: {
-    marginHorizontal: 18,
-    marginTop: 18,
-    borderRadius: 24,
-    borderWidth: 1,
-    padding: 18,
-  },
-  settingItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  settingLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    marginRight: 12,
-  },
-  settingIconWrap: {
+  infoIconWrap: {
     width: 42,
     height: 42,
-    borderRadius: 21,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
   },
-  settingLabel: {
+  infoTextContainer: {
+    flex: 1,
+  },
+  infoLabel: {
+    fontSize: 12,
+    marginBottom: 5,
+  },
+  infoValue: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  preferenceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  preferenceLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    marginRight: 12,
+  },
+  preferenceTextWrap: {
+    flex: 1,
+  },
+  preferenceTitle: {
     fontSize: 16,
     fontWeight: "700",
-    marginBottom: 3,
+    marginBottom: 4,
   },
-  settingHint: {
+  preferenceHint: {
     fontSize: 13,
     lineHeight: 18,
   },
@@ -604,7 +790,7 @@ const styles = StyleSheet.create({
     marginTop: 18,
   },
   primaryAction: {
-    height: 52,
+    height: 54,
     borderRadius: 18,
     flexDirection: "row",
     alignItems: "center",
@@ -617,7 +803,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   secondaryAction: {
-    height: 52,
+    height: 54,
     borderRadius: 18,
     borderWidth: 1,
     flexDirection: "row",
