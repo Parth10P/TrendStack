@@ -45,6 +45,21 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
     setModalVisible(true);
   };
 
+  const handleLogoutPress = () => {
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: () => {
+          if (onLogout) {
+            onLogout();
+          }
+        },
+      },
+    ]);
+  };
+
   const handleSaveProfile = async () => {
     if (!editName.trim() || !editEmail.trim()) {
       Alert.alert("Error", "Name and email are required.");
@@ -426,7 +441,7 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
                     : "#ffd9d9",
               },
             ]}
-            onPress={onLogout}
+            onPress={handleLogoutPress}
           >
             <Ionicons name="log-out-outline" size={18} color={theme.danger} />
             <Text style={[styles.secondaryActionText, { color: theme.danger }]}>

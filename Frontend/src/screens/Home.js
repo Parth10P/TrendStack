@@ -11,6 +11,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -192,15 +193,24 @@ export default function Home({ user, onLogout, navigation }) {
   };
 
   const handleLogoutPress = async () => {
-    try {
-      await userAPI.logout();
-    } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
-      if (onLogout) {
-        onLogout();
-      }
-    }
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await userAPI.logout();
+          } catch (error) {
+            console.error("Logout error:", error);
+          } finally {
+            if (onLogout) {
+              onLogout();
+            }
+          }
+        },
+      },
+    ]);
   };
 
   const headerSubtitle = user?.name
