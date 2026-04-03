@@ -13,6 +13,7 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { userAPI, postAPI } from "../services/api";
@@ -36,6 +37,15 @@ const formatCount = (value = 0) => {
   return `${value}`;
 };
 
+const sortComments = (commentList = []) =>
+  [...commentList].sort((left, right) => {
+    if (left.pinned === right.pinned) {
+      return new Date(right.createdAt || 0) - new Date(left.createdAt || 0);
+    }
+
+    return left.pinned ? -1 : 1;
+  });
+
 export default function Home({ user, onLogout, navigation }) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -49,6 +59,7 @@ export default function Home({ user, onLogout, navigation }) {
   const [newComment, setNewComment] = useState("");
   const [loadingComments, setLoadingComments] = useState(false);
   const [activePostAuthorId, setActivePostAuthorId] = useState(null);
+  const [activePostAuthorUsername, setActivePostAuthorUsername] = useState(null);
 
   useEffect(() => {
     fetchPosts();
@@ -95,9 +106,10 @@ export default function Home({ user, onLogout, navigation }) {
 
     try {
       const data = await postAPI.getComments(postId);
-      setComments(data || []);
+      setComments(sortComments(data || []));
       const post = posts.find((item) => item.id === postId);
       setActivePostAuthorId(post?.author?.id || null);
+      setActivePostAuthorUsername(post?.author?.username || null);
     } catch (error) {
       console.error("Failed to fetch comments:", error);
     } finally {
@@ -110,20 +122,23 @@ export default function Home({ user, onLogout, navigation }) {
     setComments([]);
     setNewComment("");
     setActivePostAuthorId(null);
+    setActivePostAuthorUsername(null);
   };
 
   const handleCommentLike = async (commentId) => {
     setComments((prev) =>
-      prev.map((comment) =>
-        comment.id === commentId
-          ? {
-              ...comment,
-              isLiked: !comment.isLiked,
-              likeCount: comment.isLiked
-                ? (comment.likeCount || 1) - 1
-                : (comment.likeCount || 0) + 1,
-            }
-          : comment
+      sortComments(
+        prev.map((comment) =>
+          comment.id === commentId
+            ? {
+                ...comment,
+                isLiked: !comment.isLiked,
+                likeCount: comment.isLiked
+                  ? (comment.likeCount || 1) - 1
+                  : (comment.likeCount || 0) + 1,
+              }
+            : comment
+        )
       )
     );
 
@@ -141,10 +156,12 @@ export default function Home({ user, onLogout, navigation }) {
     try {
       const result = await postAPI.pinComment(commentId);
       setComments((prev) =>
-        prev.map((comment) =>
-          comment.id === commentId
-            ? { ...comment, pinned: result.pinned }
-            : comment
+        sortComments(
+          prev.map((comment) =>
+            comment.id === commentId
+              ? { ...comment, pinned: result.pinned }
+              : comment
+          )
         )
       );
     } catch (error) {
@@ -159,7 +176,7 @@ export default function Home({ user, onLogout, navigation }) {
 
     try {
       const comment = await postAPI.addComment(activePostId, newComment.trim());
-      setComments((prev) => [comment, ...prev]);
+      setComments((prev) => sortComments([comment, ...prev]));
       setNewComment("");
 
       setPosts((prevPosts) =>
@@ -189,6 +206,13 @@ export default function Home({ user, onLogout, navigation }) {
   const headerSubtitle = user?.name
     ? `Welcome back, ${user.name.split(" ")[0]}`
     : "See what your community is talking about";
+  const canPinComments =
+    Boolean(user?.id && activePostAuthorId && user.id === activePostAuthorId) ||
+    Boolean(
+      user?.username &&
+        activePostAuthorUsername &&
+        user.username === activePostAuthorUsername
+    );
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -389,8 +413,8 @@ export default function Home({ user, onLogout, navigation }) {
                   style={styles.actionItem}
                   onPress={() => handleLike(post.id)}
                 >
-                  <Ionicons
-                    name={post.isLiked ? "heart" : "heart-outline"}
+                  <MaterialIcons
+                    name={post.isLiked ? "favorite" : "favorite-border"}
                     size={22}
                     color={post.isLiked ? theme.danger : theme.iconSecondary}
                   />
@@ -647,11 +671,11 @@ export default function Home({ user, onLogout, navigation }) {
                         onPress={() => handleCommentLike(comment.id)}
                         style={styles.commentAction}
                       >
-                        <Ionicons
-                          name={comment.isLiked ? "heart" : "heart-outline"}
+                        <MaterialIcons
+                          name={comment.isLiked ? "thumb-up" : "thumb-up-off-alt"}
                           size={18}
                           color={
-                            comment.isLiked ? theme.danger : theme.iconSecondary
+                            comment.isLiked ? theme.primary : theme.iconSecondary
                           }
                         />
                         <Text
@@ -664,7 +688,7 @@ export default function Home({ user, onLogout, navigation }) {
                         </Text>
                       </TouchableOpacity>
 
-                      {user && user.id === activePostAuthorId ? (
+                      {canPinComments ? (
                         <TouchableOpacity
                           onPress={() => handlePinComment(comment.id)}
                           style={styles.commentAction}

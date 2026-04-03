@@ -20,10 +20,16 @@
         "foregroundImage": "./assets/trendStack_logo.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "trend_stack.com"
     },
     "web": {
       "favicon": "./assets/trendStack_logo.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2d129f38-5953-4ce3-a44b-9849f9a35163"
+      }
     }
   }
 }
