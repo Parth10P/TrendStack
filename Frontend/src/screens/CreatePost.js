@@ -9,7 +9,9 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  ScrollView,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -33,56 +35,130 @@ export default function CreatePost({
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const [content, setContent] = useState("");
+  const [selectedMedia, setSelectedMedia] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const trimmedLength = content.trim().length;
   const remaining = 5000 - content.length;
-  const canPost = trimmedLength > 0 && !isLoading;
+  const canPost = (trimmedLength > 0 || Boolean(selectedMedia)) && !isLoading;
 
   const helperMessage = useMemo(() => {
-    if (content.length === 0) {
-      return "Share a quick update, a thought, or the start of a blog post.";
+    if (!content.length && !selectedMedia) {
+      return "Share a quick update, a thought, or add a photo to your post.";
     }
 
     if (remaining < 120) {
       return `${remaining} characters left`;
     }
 
+    if (selectedMedia) {
+      return "Your selected media will be uploaded with the post.";
+    }
+
     return "Make it useful, personal, or interesting enough to start replies.";
-  }, [content.length, remaining]);
+  }, [content.length, remaining, selectedMedia]);
+
+  const resetDraft = () => {
+    setContent("");
+    setSelectedMedia(null);
+  };
+
+  const pickMedia = async () => {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert(
+          "Permission required",
+          "Allow photo access to upload media in your posts."
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [4, 5],
+        quality: 0.2,
+        base64: true,
+      });
+
+      if (result.canceled || !result.assets?.length) {
+        return;
+      }
+
+      const asset = result.assets[0];
+      if (!asset.base64) {
+        Alert.alert("Error", "Could not process the selected image.");
+        return;
+      }
+
+      // Base64 payloads can get large quickly; guard against oversize uploads.
+      if (asset.base64.length > 4_000_000) {
+        Alert.alert(
+          "Image too large",
+          "Please choose a smaller image. Large images can fail to upload."
+        );
+        return;
+      }
+
+      setSelectedMedia({
+        uri: asset.uri,
+        mimeType: asset.mimeType || "image/jpeg",
+        dataUri: `data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`,
+      });
+    } catch (error) {
+      console.error("Media pick error:", error);
+      Alert.alert("Error", "Failed to pick media. Please try again.");
+    }
+  };
 
   const handleCreatePost = async () => {
-    if (!content.trim()) {
-      Alert.alert("Error", "Please write something to post.");
+    if (!content.trim() && !selectedMedia) {
+      Alert.alert("Error", "Please write something or add media to post.");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      await postAPI.createPost({ content: content.trim() });
-      setContent("");
+      const payload = {
+        content: content.trim(),
+        attachments: selectedMedia
+          ? [
+              {
+                type: "image",
+                uri: selectedMedia.dataUri,
+              },
+            ]
+          : [],
+      };
+
+      await postAPI.createPost(payload);
+      resetDraft();
       onClose();
 
       if (onPostCreated) {
         onPostCreated();
       }
     } catch (error) {
-      Alert.alert("Error", error.message || "Failed to create post. Please try again.");
+      Alert.alert(
+        "Error",
+        error.message || "Failed to create post. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleCancel = () => {
-    if (content.trim()) {
+    if (content.trim() || selectedMedia) {
       Alert.alert("Discard Post?", "Your draft will be removed.", [
         { text: "Keep Editing", style: "cancel" },
         {
           text: "Discard",
           style: "destructive",
           onPress: () => {
-            setContent("");
+            resetDraft();
             onClose();
           },
         },
@@ -90,7 +166,7 @@ export default function CreatePost({
       return;
     }
 
-    setContent("");
+    resetDraft();
     onClose();
   };
 
@@ -109,7 +185,9 @@ export default function CreatePost({
       >
         <View style={[styles.header, { borderBottomColor: theme.border }]}>
           <TouchableOpacity onPress={handleCancel} style={styles.headerButton}>
-            <Text style={[styles.headerButtonText, { color: theme.textSecondary }]}>
+            <Text
+              style={[styles.headerButtonText, { color: theme.textSecondary }]}
+            >
               Cancel
             </Text>
           </TouchableOpacity>
@@ -139,7 +217,10 @@ export default function CreatePost({
           </TouchableOpacity>
         </View>
 
-        <View style={styles.contentArea}>
+        <ScrollView
+          contentContainerStyle={styles.contentArea}
+          showsVerticalScrollIndicator={false}
+        >
           <LinearGradient
             colors={
               theme.type === "dark"
@@ -175,7 +256,7 @@ export default function CreatePost({
               What is worth sharing right now?
             </Text>
             <Text style={[styles.promptText, { color: theme.textSecondary }]}>
-              Thoughtful posts tend to get more comments than one-line updates.
+              Thoughtful posts and visuals tend to get more engagement.
             </Text>
           </LinearGradient>
 
@@ -200,6 +281,18 @@ export default function CreatePost({
               textAlignVertical="top"
             />
 
+            {selectedMedia ? (
+              <View style={styles.previewWrap}>
+                <Image source={{ uri: selectedMedia.uri }} style={styles.previewImage} />
+                <TouchableOpacity
+                  style={styles.removeMediaButton}
+                  onPress={() => setSelectedMedia(null)}
+                >
+                  <Ionicons name="close" size={16} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            ) : null}
+
             <View style={styles.editorFooter}>
               <Text
                 style={[
@@ -222,6 +315,41 @@ export default function CreatePost({
             </View>
           </View>
 
+          <TouchableOpacity
+            style={[
+              styles.addMediaButton,
+              {
+                borderColor: theme.border,
+                backgroundColor:
+                  theme.type === "dark" ? theme.surface : "#ffffff",
+              },
+            ]}
+            activeOpacity={0.85}
+            onPress={pickMedia}
+          >
+            <View
+              style={[
+                styles.addMediaIconWrap,
+                {
+                  backgroundColor:
+                    theme.type === "dark" ? "rgba(109, 254, 156, 0.12)" : "#eef8f2",
+                },
+              ]}
+            >
+              <Ionicons name="image-outline" size={20} color={theme.primary} />
+            </View>
+            <View style={styles.addMediaContent}>
+              <Text style={[styles.addMediaTitle, { color: theme.text }]}>
+                {selectedMedia ? "Change selected image" : "Add photo"}
+              </Text>
+              <Text
+                style={[styles.addMediaText, { color: theme.textSecondary }]}
+              >
+                Pick an image from your gallery and include it in this post.
+              </Text>
+            </View>
+          </TouchableOpacity>
+
           <View
             style={[
               styles.tipCard,
@@ -243,41 +371,7 @@ export default function CreatePost({
               better conversation.
             </Text>
           </View>
-
-          <TouchableOpacity
-            style={[
-              styles.addMediaButton,
-              {
-                borderColor: theme.border,
-                backgroundColor:
-                  theme.type === "dark" ? theme.surface : "#ffffff",
-              },
-            ]}
-            activeOpacity={0.85}
-          >
-            <View
-              style={[
-                styles.addMediaIconWrap,
-                {
-                  backgroundColor:
-                    theme.type === "dark" ? "rgba(109, 254, 156, 0.12)" : "#eef8f2",
-                },
-              ]}
-            >
-              <Ionicons name="image-outline" size={20} color={theme.primary} />
-            </View>
-            <View style={styles.addMediaContent}>
-              <Text style={[styles.addMediaTitle, { color: theme.text }]}>
-                Media upload coming soon
-              </Text>
-              <Text
-                style={[styles.addMediaText, { color: theme.textSecondary }]}
-              >
-                The layout is ready for photos and richer posts next.
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+        </ScrollView>
       </View>
     </Modal>
   );
@@ -319,8 +413,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   contentArea: {
-    flex: 1,
     padding: 18,
+    paddingBottom: 28,
   },
   introCard: {
     borderRadius: 24,
@@ -361,17 +455,37 @@ const styles = StyleSheet.create({
     lineHeight: 21,
   },
   editorCard: {
-    flex: 1,
     borderRadius: 24,
     borderWidth: 1,
     padding: 18,
     marginBottom: 16,
   },
   textInput: {
-    flex: 1,
     fontSize: 17,
     lineHeight: 26,
-    minHeight: 240,
+    minHeight: 220,
+  },
+  previewWrap: {
+    marginTop: 16,
+    borderRadius: 20,
+    overflow: "hidden",
+    position: "relative",
+  },
+  previewImage: {
+    width: "100%",
+    height: 220,
+    borderRadius: 20,
+  },
+  removeMediaButton: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   editorFooter: {
     flexDirection: "row",
@@ -389,29 +503,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
-  tipCard: {
-    borderRadius: 18,
-    borderWidth: 1,
-    padding: 14,
-    marginBottom: 16,
-    flexDirection: "row",
-    alignItems: "flex-start",
-  },
-  tipIcon: {
-    marginTop: 1,
-    marginRight: 10,
-  },
-  tipText: {
-    flex: 1,
-    fontSize: 13,
-    lineHeight: 19,
-  },
   addMediaButton: {
     borderWidth: 1,
     borderRadius: 20,
     padding: 16,
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: 16,
   },
   addMediaIconWrap: {
     width: 42,
@@ -432,5 +530,21 @@ const styles = StyleSheet.create({
   addMediaText: {
     fontSize: 13,
     lineHeight: 18,
+  },
+  tipCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 14,
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  tipIcon: {
+    marginTop: 1,
+    marginRight: 10,
+  },
+  tipText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 19,
   },
 });

@@ -90,12 +90,6 @@ async function getUserById(userId) {
           location: true,
         },
       },
-      _count: {
-        select: {
-          posts: true,
-          comments: true,
-        },
-      },
     },
   });
 
@@ -105,7 +99,58 @@ async function getUserById(userId) {
     throw err;
   }
 
-  return user;
+  const [postsCount, commentsCount] = await prisma.$transaction([
+    prisma.post.count({ where: { authorId: userId } }),
+    prisma.comment.count({ where: { authorId: userId } }),
+  ]);
+
+  // Follower/following support is optional for now. If the Follow model is not
+  // available in the current generated Prisma client yet, fall back to 0 so the
+  // profile screen still loads cleanly.
+  let followersCount = 0;
+  let followingCount = 0;
+
+  if (prisma.follow && typeof prisma.follow.count === "function") {
+    [followersCount, followingCount] = await prisma.$transaction([
+      prisma.follow.count({ where: { followingId: userId } }),
+      prisma.follow.count({ where: { followerId: userId } }),
+    ]);
+  }
+
+  return {
+    ...user,
+    postsCount,
+    commentsCount,
+    followersCount,
+    followingCount,
+  };
 }
 
-module.exports = { signUp, login, searchUsers, getUserById };
+async function getUserPostsById(userId) {
+  return prisma.post.findMany({
+    where: { authorId: userId },
+    orderBy: { createdAt: "desc" },
+    include: {
+      author: {
+        select: {
+          id: true,
+          name: true,
+          username: true,
+          profile: {
+            select: {
+              avatarUrl: true,
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+module.exports = {
+  signUp,
+  login,
+  searchUsers,
+  getUserById,
+  getUserPostsById,
+};

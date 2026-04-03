@@ -23,6 +23,16 @@
       "edgeToEdgeEnabled": true,
       "package": "trend_stack.com"
     },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "TrendStack needs photo access so you can upload media in your posts.",
+          "cameraPermission": "TrendStack needs camera access so you can capture media for your posts.",
+          "microphonePermission": false
+        }
+      ]
+    ],
     "web": {
       "favicon": "./assets/trendStack_logo.png"
     },

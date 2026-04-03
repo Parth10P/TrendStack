@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -27,9 +28,31 @@ const getAvatarSource = (name, avatarUrl) => ({
     )}&background=0D8ABC&color=fff`,
 });
 
+const getPrimaryImageUri = (attachments) => {
+  if (!Array.isArray(attachments) || attachments.length === 0) {
+    return null;
+  }
+
+  const imageAttachment = attachments.find(
+    (attachment) => attachment?.type === "image" && attachment?.uri
+  );
+
+  return imageAttachment?.uri || null;
+};
+
+const formatCompactCount = (value = 0) => {
+  if (value >= 1000) {
+    return `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}k`;
+  }
+
+  return `${value}`;
+};
+
 export default function ProfileScreen({ navigation, user, onLogout }) {
   const { theme, isDarkMode, toggleTheme } = useTheme();
   const [displayedUser, setDisplayedUser] = useState(user);
+  const [userPosts, setUserPosts] = useState([]);
+  const [loadingProfile, setLoadingProfile] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
@@ -39,25 +62,57 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
     setDisplayedUser(user);
   }, [user]);
 
+  useEffect(() => {
+    let active = true;
+
+    async function loadProfile() {
+      if (!user?.id) {
+        if (active) {
+          setLoadingProfile(false);
+        }
+        return;
+      }
+
+      try {
+        setLoadingProfile(true);
+        const [userDetails, posts] = await Promise.all([
+          userAPI.getUserById(user.id),
+          userAPI.getUserPosts(user.id),
+        ]);
+
+        if (!active) {
+          return;
+        }
+
+        setDisplayedUser((prev) => ({
+          ...prev,
+          ...userDetails,
+          profile: {
+            ...(prev?.profile || {}),
+            ...(userDetails.profile || {}),
+          },
+        }));
+        setUserPosts(posts || []);
+      } catch (error) {
+        console.error("Failed to load profile:", error);
+      } finally {
+        if (active) {
+          setLoadingProfile(false);
+        }
+      }
+    }
+
+    loadProfile();
+
+    return () => {
+      active = false;
+    };
+  }, [user?.id]);
+
   const openEditModal = () => {
     setEditName(displayedUser?.name || "");
     setEditEmail(displayedUser?.email || "");
     setModalVisible(true);
-  };
-
-  const handleLogoutPress = () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: () => {
-          if (onLogout) {
-            onLogout();
-          }
-        },
-      },
-    ]);
   };
 
   const handleSaveProfile = async () => {
@@ -76,7 +131,14 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
       };
 
       const response = await userAPI.updateProfile(updatedData);
-      setDisplayedUser({ ...displayedUser, ...response.user });
+      setDisplayedUser((prev) => ({
+        ...prev,
+        ...response.user,
+        profile: {
+          ...(prev?.profile || {}),
+          ...(response.user?.profile || {}),
+        },
+      }));
       setModalVisible(false);
       Alert.alert("Success", "Profile updated successfully.");
     } catch (error) {
@@ -87,27 +149,43 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
     }
   };
 
-  const activityStats = [
-    { label: "Posts", value: "120", icon: "document-text-outline" },
-    { label: "Followers", value: "4.5k", icon: "people-outline" },
-    { label: "Following", value: "380", icon: "person-add-outline" },
-  ];
+  const handleLogoutPress = () => {
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: () => {
+          if (onLogout) {
+            onLogout();
+          }
+        },
+      },
+    ]);
+  };
 
-  const infoRows = [
-    {
-      label: "Email",
-      value: displayedUser?.email || "No email added",
-      icon: "mail-outline",
-    },
-    {
-      label: "Username",
-      value: `@${displayedUser?.username || "username"}`,
-      icon: "at-outline",
-    },
-  ];
+  const stats = useMemo(
+    () => [
+      {
+        label: "Posts",
+        value: formatCompactCount(displayedUser?.postsCount || userPosts.length),
+        icon: "grid-outline",
+      },
+      {
+        label: "Followers",
+        value: formatCompactCount(displayedUser?.followersCount || 0),
+        icon: "people-outline",
+      },
+      {
+        label: "Following",
+        value: formatCompactCount(displayedUser?.followingCount || 0),
+        icon: "person-add-outline",
+      },
+    ],
+    [displayedUser?.followersCount, displayedUser?.followingCount, displayedUser?.postsCount, userPosts.length]
+  );
 
-  const cardBackground =
-    theme.type === "dark" ? theme.cardBackground : theme.cardBackground;
+  const featuredPosts = userPosts.slice(0, 6);
   const softSurface = theme.type === "dark" ? theme.surface : "#f5f8fc";
   const mutedSurface = theme.type === "dark" ? "#111d36" : "#edf7f1";
 
@@ -154,82 +232,41 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
         <LinearGradient
           colors={
             theme.type === "dark"
-              ? ["#18355f", "#1db767"]
-              : ["#2bb673", "#13975e"]
+              ? ["#12335d", "#1c995a", "#0f1f38"]
+              : ["#2bb673", "#14865a", "#f2fbf6"]
           }
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.hero}
         >
-          <View style={styles.heroGlowOne} />
-          <View style={styles.heroGlowTwo} />
-
-          <View style={styles.heroTop}>
-            <View>
-              <Text style={styles.heroLabel}>Creator profile</Text>
-              <Text style={styles.heroTitle}>Make your profile feel alive.</Text>
-            </View>
-
-            <TouchableOpacity style={styles.heroChip} onPress={openEditModal}>
-              <Ionicons name="create-outline" size={14} color="#fff" />
-              <Text style={styles.heroChipText}>Edit</Text>
-            </TouchableOpacity>
+          <View style={styles.heroGallery}>
+            <View style={[styles.heroTile, styles.heroTileLarge]} />
+            <View style={[styles.heroTile, styles.heroTileMedium]} />
+            <View style={[styles.heroTile, styles.heroTileSmall]} />
           </View>
-
-          <Text style={styles.heroSubtitle}>
-            A clean profile helps people trust what you post and follow you
-            faster.
-          </Text>
         </LinearGradient>
 
         <View
           style={[
-            styles.identityCard,
+            styles.profileShell,
             {
-              backgroundColor: cardBackground,
-              borderColor: theme.border,
+              backgroundColor: theme.background,
             },
           ]}
         >
-          <View style={styles.identityTop}>
-            <View style={styles.avatarWrap}>
-              <Image
-                source={getAvatarSource(
-                  displayedUser?.name,
-                  displayedUser?.profile?.avatarUrl
-                )}
-                style={[
-                  styles.avatar,
-                  {
-                    borderColor:
-                      theme.type === "dark" ? theme.background : "#ffffff",
-                  },
-                ]}
-              />
-              <View
-                style={[
-                  styles.onlineDot,
-                  { borderColor: cardBackground, backgroundColor: "#30d158" },
-                ]}
-              />
-            </View>
-
-            <TouchableOpacity
-              style={[
-                styles.editPill,
-                {
-                  backgroundColor: mutedSurface,
-                  borderColor: theme.border,
-                },
-              ]}
-              onPress={openEditModal}
-            >
-              <Ionicons name="brush-outline" size={15} color={theme.primary} />
-              <Text style={[styles.editPillText, { color: theme.primary }]}>
-                Customize
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <Image
+            source={getAvatarSource(
+              displayedUser?.name,
+              displayedUser?.profile?.avatarUrl
+            )}
+            style={[
+              styles.avatar,
+              {
+                borderColor:
+                  theme.type === "dark" ? theme.background : "#ffffff",
+              },
+            ]}
+          />
 
           <Text style={[styles.name, { color: theme.text }]}>
             {displayedUser?.name || "User"}
@@ -238,10 +275,35 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
             @{displayedUser?.username || "username"}
           </Text>
 
+          <View style={styles.tagRow}>
+            <Text style={[styles.tagText, { color: theme.textSecondary }]}>
+              #TrendStack
+            </Text>
+            <Text style={[styles.tagText, { color: theme.textSecondary }]}>
+              #Creator
+            </Text>
+            <Text style={[styles.tagText, { color: theme.textSecondary }]}>
+              #Community
+            </Text>
+          </View>
+
           <Text style={[styles.bio, { color: theme.textSecondary }]}>
             {displayedUser?.profile?.bio ||
               "Digital enthusiast and trend setter"}
           </Text>
+
+          <View style={styles.statsRow}>
+            {stats.map((item) => (
+              <View key={item.label} style={styles.statItem}>
+                <Text style={[styles.statValue, { color: theme.text }]}>
+                  {item.value}
+                </Text>
+                <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
+                  {item.label}
+                </Text>
+              </View>
+            ))}
+          </View>
 
           <View style={styles.metaRow}>
             <View
@@ -254,18 +316,80 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
               ]}
             >
               <Ionicons
+                name="location-outline"
+                size={14}
+                color={theme.primary}
+              />
+              <Text style={[styles.metaChipText, { color: theme.textSecondary }]}>
+                {displayedUser?.profile?.location || "Location not added"}
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.metaChip,
+                {
+                  backgroundColor: mutedSurface,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <Ionicons
                 name="sparkles-outline"
                 size={14}
                 color={theme.primary}
               />
               <Text style={[styles.metaChipText, { color: theme.textSecondary }]}>
-                Active creator
+                {loadingProfile ? "Loading profile" : "Profile updated"}
               </Text>
             </View>
+          </View>
+        </View>
 
+        <View
+          style={[
+            styles.sectionCard,
+            {
+              backgroundColor: theme.cardBackground,
+              borderColor: theme.border,
+            },
+          ]}
+        >
+          <View style={styles.sectionHeaderRow}>
+            <View>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                Posts
+              </Text>
+              <Text
+                style={[styles.sectionSubtitle, { color: theme.textSecondary }]}
+              >
+                Everything you have shared on TrendStack
+              </Text>
+            </View>
             <View
               style={[
-                styles.metaChip,
+                styles.sectionCountPill,
+                {
+                  backgroundColor: softSurface,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <Text
+                style={[styles.sectionCountText, { color: theme.primary }]}
+              >
+                {displayedUser?.postsCount || userPosts.length}
+              </Text>
+            </View>
+          </View>
+
+          {loadingProfile ? (
+            <View style={styles.loaderWrap}>
+              <ActivityIndicator size="small" color={theme.primary} />
+            </View>
+          ) : featuredPosts.length === 0 ? (
+            <View
+              style={[
+                styles.emptyPostsCard,
                 {
                   backgroundColor: softSurface,
                   borderColor: theme.border,
@@ -273,101 +397,67 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
               ]}
             >
               <Ionicons
-                name="globe-outline"
-                size={14}
+                name="document-text-outline"
+                size={24}
                 color={theme.primary}
               />
-              <Text style={[styles.metaChipText, { color: theme.textSecondary }]}>
-                TrendStack
+              <Text style={[styles.emptyPostsTitle, { color: theme.text }]}>
+                No posts yet
+              </Text>
+              <Text
+                style={[styles.emptyPostsText, { color: theme.textSecondary }]}
+              >
+                Share your first post and it will appear here.
               </Text>
             </View>
-          </View>
-
-          <View style={styles.statsGrid}>
-            {activityStats.map((item) => (
-              <View
-                key={item.label}
-                style={[
-                  styles.statCard,
-                  {
-                    backgroundColor: softSurface,
-                    borderColor: theme.border,
-                  },
-                ]}
-              >
-                <View
+          ) : (
+            <View style={styles.postsGrid}>
+              {featuredPosts.map((post, index) => (
+                <TouchableOpacity
+                  key={post.id}
                   style={[
-                    styles.statIconWrap,
-                    {
-                      backgroundColor: mutedSurface,
+                    styles.postTile,
+                    !getPrimaryImageUri(post.attachments) && {
+                      backgroundColor:
+                        index % 3 === 0
+                          ? "#0f1f38"
+                          : index % 3 === 1
+                            ? "#1f7a5a"
+                            : "#d59d3d",
                     },
                   ]}
+                  onPress={() =>
+                    navigation.navigate("PostDetails", {
+                      postId: post.id,
+                      initialPost: post,
+                    })
+                  }
                 >
-                  <Ionicons name={item.icon} size={16} color={theme.primary} />
-                </View>
-                <Text style={[styles.statValue, { color: theme.text }]}>
-                  {item.value}
-                </Text>
-                <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
-                  {item.label}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        <View
-          style={[
-            styles.sectionCard,
-            {
-              backgroundColor: cardBackground,
-              borderColor: theme.border,
-            },
-          ]}
-        >
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            Account details
-          </Text>
-
-          {infoRows.map((item, index) => (
-            <View
-              key={item.label}
-              style={[
-                styles.infoRow,
-                index !== infoRows.length - 1 && {
-                  borderBottomColor: theme.border,
-                  borderBottomWidth: 1,
-                },
-              ]}
-            >
-              <View
-                style={[
-                  styles.infoIconWrap,
-                  {
-                    backgroundColor: mutedSurface,
-                  },
-                ]}
-              >
-                <Ionicons name={item.icon} size={18} color={theme.primary} />
-              </View>
-
-              <View style={styles.infoTextContainer}>
-                <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>
-                  {item.label}
-                </Text>
-                <Text style={[styles.infoValue, { color: theme.text }]}>
-                  {item.value}
-                </Text>
-              </View>
+                  {getPrimaryImageUri(post.attachments) ? (
+                    <Image
+                      source={{ uri: getPrimaryImageUri(post.attachments) }}
+                      style={styles.postTileImage}
+                      resizeMode="cover"
+                    />
+                  ) : null}
+                  <View style={styles.postTileOverlay} />
+                  <Text style={styles.postTileMeta}>
+                    {formatCompactCount(post.likeCount || 0)} likes
+                  </Text>
+                  <Text style={styles.postTileText} numberOfLines={4}>
+                    {post.content}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
-          ))}
+          )}
         </View>
 
         <View
           style={[
             styles.sectionCard,
             {
-              backgroundColor: cardBackground,
+              backgroundColor: theme.cardBackground,
               borderColor: theme.border,
             },
           ]}
@@ -380,7 +470,7 @@ export default function ProfileScreen({ navigation, user, onLogout }) {
             <View style={styles.preferenceLeft}>
               <View
                 style={[
-                  styles.infoIconWrap,
+                  styles.preferenceIconWrap,
                   {
                     backgroundColor: mutedSurface,
                   },
@@ -568,134 +658,98 @@ const styles = StyleSheet.create({
     marginHorizontal: 18,
     marginTop: 18,
     borderRadius: 30,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 92,
-    overflow: "hidden",
+    padding: 18,
+    height: 210,
+    justifyContent: "flex-start",
   },
-  heroGlowOne: {
-    position: "absolute",
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: "rgba(255,255,255,0.10)",
-    top: -40,
-    right: -10,
-  },
-  heroGlowTwo: {
-    position: "absolute",
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: "rgba(255,255,255,0.08)",
-    bottom: -30,
-    left: -10,
-  },
-  heroTop: {
+  heroGallery: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 18,
   },
-  heroLabel: {
-    color: "rgba(255,255,255,0.86)",
-    fontSize: 12,
-    fontWeight: "800",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    marginBottom: 10,
+  heroTile: {
+    borderRadius: 24,
+    backgroundColor: "rgba(255,255,255,0.28)",
   },
-  heroTitle: {
-    color: "#ffffff",
-    fontSize: 28,
-    fontWeight: "800",
-    lineHeight: 34,
-    maxWidth: 220,
+  heroTileLarge: {
+    width: "30%",
+    height: 132,
   },
-  heroSubtitle: {
-    color: "rgba(255,255,255,0.82)",
-    fontSize: 14,
-    lineHeight: 21,
-    maxWidth: 260,
+  heroTileMedium: {
+    width: "30%",
+    height: 148,
+    marginTop: 8,
   },
-  heroChip: {
-    flexDirection: "row",
+  heroTileSmall: {
+    width: "30%",
+    height: 124,
+    marginTop: 4,
+  },
+  profileShell: {
+    marginTop: -52,
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.18)",
-  },
-  heroChipText: {
-    color: "#ffffff",
-    marginLeft: 6,
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  identityCard: {
-    marginHorizontal: 18,
-    marginTop: -56,
-    borderRadius: 28,
-    borderWidth: 1,
-    paddingHorizontal: 18,
-    paddingTop: 18,
-    paddingBottom: 18,
-  },
-  identityTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 12,
-  },
-  avatarWrap: {
-    position: "relative",
+    paddingHorizontal: 22,
   },
   avatar: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
+    width: 92,
+    height: 92,
+    borderRadius: 46,
     borderWidth: 4,
-  },
-  onlineDot: {
-    position: "absolute",
-    right: 4,
-    bottom: 4,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    borderWidth: 3,
-  },
-  editPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  editPillText: {
-    marginLeft: 6,
-    fontSize: 13,
-    fontWeight: "700",
+    marginBottom: 14,
   },
   name: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: "800",
     marginBottom: 4,
   },
   handle: {
     fontSize: 15,
+    marginBottom: 10,
+  },
+  tagRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
     marginBottom: 12,
+  },
+  tagText: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginHorizontal: 8,
+    marginBottom: 4,
   },
   bio: {
     fontSize: 14,
     lineHeight: 21,
-    marginBottom: 14,
+    textAlign: "center",
+    marginBottom: 18,
+    maxWidth: 320,
+  },
+  statsRow: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  statValue: {
+    fontSize: 22,
+    fontWeight: "800",
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 13,
+    fontWeight: "500",
   },
   metaRow: {
+    width: "100%",
     flexDirection: "row",
+    justifyContent: "center",
     flexWrap: "wrap",
-    marginBottom: 16,
+    marginBottom: 8,
   },
   metaChip: {
     flexDirection: "row",
@@ -704,42 +758,13 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    marginRight: 10,
+    marginHorizontal: 6,
     marginBottom: 8,
   },
   metaChipText: {
     marginLeft: 6,
     fontSize: 12,
     fontWeight: "600",
-  },
-  statsGrid: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  statCard: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingVertical: 16,
-    paddingHorizontal: 8,
-    alignItems: "center",
-    marginHorizontal: 4,
-  },
-  statIconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: "800",
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
   },
   sectionCard: {
     marginHorizontal: 18,
@@ -748,34 +773,88 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 18,
   },
+  sectionHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "800",
-    marginBottom: 14,
   },
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 14,
+  sectionSubtitle: {
+    fontSize: 13,
+    marginTop: 4,
   },
-  infoIconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
+  sectionCountPill: {
+    minWidth: 42,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    paddingHorizontal: 12,
   },
-  infoTextContainer: {
-    flex: 1,
+  sectionCountText: {
+    fontSize: 14,
+    fontWeight: "800",
   },
-  infoLabel: {
+  loaderWrap: {
+    paddingVertical: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyPostsCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: "center",
+    padding: 24,
+  },
+  emptyPostsTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  emptyPostsText: {
+    textAlign: "center",
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  postsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  postTile: {
+    width: "48.5%",
+    minHeight: 156,
+    borderRadius: 22,
+    padding: 14,
+    marginBottom: 12,
+    overflow: "hidden",
+    justifyContent: "space-between",
+  },
+  postTileImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: "100%",
+    height: "100%",
+  },
+  postTileOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(255,255,255,0.06)",
+  },
+  postTileMeta: {
+    color: "rgba(255,255,255,0.88)",
     fontSize: 12,
-    marginBottom: 5,
+    fontWeight: "700",
   },
-  infoValue: {
+  postTileText: {
+    color: "#ffffff",
     fontSize: 15,
     fontWeight: "700",
+    lineHeight: 22,
   },
   preferenceRow: {
     flexDirection: "row",
@@ -786,6 +865,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
+    marginRight: 12,
+  },
+  preferenceIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
   },
   preferenceTextWrap: {

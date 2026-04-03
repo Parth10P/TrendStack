@@ -14,8 +14,8 @@ app.use(
   })
 );
 app.use(cookieParser()); // Enable cookie parsing
-app.use(express.json()); // Parse JSON request bodies
-app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
+app.use(express.json({ limit: "50mb" })); // Parse JSON request bodies
+app.use(express.urlencoded({ extended: true, limit: "50mb" })); // Parse URL-encoded bodies
 
 // Routes
 app.use("/api/users", userRouter); // Mount user routes at /api/users
@@ -24,6 +24,17 @@ app.use("/api/posts", postRouter); // Mount post routes at /api/posts
 // Root health check
 app.get("/", (req, res) => {
   res.send("TrendStack backend is working");
+});
+
+// Ensure oversize request failures return JSON instead of Express HTML.
+app.use((error, req, res, next) => {
+  if (error?.type === "entity.too.large") {
+    return res.status(413).json({
+      err: "Uploaded media is too large. Please choose a smaller image.",
+    });
+  }
+
+  return next(error);
 });
 
 // Start server

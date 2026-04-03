@@ -84,6 +84,10 @@ export const userAPI = {
     return apiRequest("/users", `/${userId}`, "GET", null);
   },
 
+  async getUserPosts(userId) {
+    return apiRequest("/users", `/${userId}/posts`, "GET", null);
+  },
+
   // Update profile
   async updateProfile(userData) {
     return apiRequest("/users", "/profile", "PUT", userData);

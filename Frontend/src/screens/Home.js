@@ -30,6 +30,18 @@ const getAvatarSource = (name, avatarUrl) => ({
     )}&background=0D8ABC&color=fff`,
 });
 
+const getPrimaryImageUri = (attachments) => {
+  if (!Array.isArray(attachments) || attachments.length === 0) {
+    return null;
+  }
+
+  const imageAttachment = attachments.find(
+    (attachment) => attachment?.type === "image" && attachment?.uri
+  );
+
+  return imageAttachment?.uri || null;
+};
+
 const formatCount = (value = 0) => {
   if (value >= 1000) {
     return `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}k`;
@@ -410,6 +422,14 @@ export default function Home({ user, onLogout, navigation }) {
               <Text style={[styles.postContent, { color: theme.text }]}>
                 {post.content}
               </Text>
+
+              {getPrimaryImageUri(post.attachments) ? (
+                <Image
+                  source={{ uri: getPrimaryImageUri(post.attachments) }}
+                  style={styles.postImage}
+                  resizeMode="cover"
+                />
+              ) : null}
 
               <View
                 style={[
@@ -942,6 +962,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 24,
     fontWeight: "500",
+  },
+  postImage: {
+    width: "100%",
+    height: 240,
+    borderRadius: 18,
+    marginTop: 16,
   },
   postFooter: {
     flexDirection: "row",

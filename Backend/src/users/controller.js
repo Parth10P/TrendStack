@@ -3,6 +3,7 @@ const {
   login: loginService,
   searchUsers,
   getUserById,
+  getUserPostsById,
 } = require("./service");
 
 async function create(req, res) {
@@ -75,4 +76,17 @@ async function getUser(req, res) {
   }
 }
 
-module.exports = { create, login, logout, search, getUser };
+async function getUserPosts(req, res) {
+  try {
+    const { id } = req.params;
+    const posts = await getUserPostsById(id);
+    return res.status(200).json(posts);
+  } catch (error) {
+    const code = error.statusCode || 500;
+    return res
+      .status(code)
+      .json({ err: error.message || "Failed to get user posts" });
+  }
+}
+
+module.exports = { create, login, logout, search, getUser, getUserPosts };

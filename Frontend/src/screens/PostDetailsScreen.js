@@ -21,6 +21,18 @@ const getAvatarSource = (name, avatarUrl) => ({
     )}&background=0D8ABC&color=fff`,
 });
 
+const getPrimaryImageUri = (attachments) => {
+  if (!Array.isArray(attachments) || attachments.length === 0) {
+    return null;
+  }
+
+  const imageAttachment = attachments.find(
+    (attachment) => attachment?.type === "image" && attachment?.uri
+  );
+
+  return imageAttachment?.uri || null;
+};
+
 export default function PostDetailsScreen({ navigation, route }) {
   const { theme } = useTheme();
   const { postId, initialPost } = route.params || {};
@@ -124,6 +136,14 @@ export default function PostDetailsScreen({ navigation, route }) {
             <Text style={[styles.postContent, { color: theme.text }]}>
               {post.content}
             </Text>
+
+            {getPrimaryImageUri(post.attachments) ? (
+              <Image
+                source={{ uri: getPrimaryImageUri(post.attachments) }}
+                style={styles.postImage}
+                resizeMode="cover"
+              />
+            ) : null}
 
             <View style={styles.metricsRow}>
               <View style={styles.metricItem}>
@@ -291,6 +311,12 @@ const styles = StyleSheet.create({
   postContent: {
     fontSize: 16,
     lineHeight: 25,
+    marginBottom: 16,
+  },
+  postImage: {
+    width: "100%",
+    height: 260,
+    borderRadius: 18,
     marginBottom: 16,
   },
   metricsRow: {

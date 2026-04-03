@@ -25,6 +25,8 @@ model User {
   comments   Comment[]
   likes      Like[]
   commentLikes CommentLike[]
+  followers  Follow[]  @relation("UserFollowers")
+  following  Follow[]  @relation("UserFollowing")
 
   @@map("users")
 }
@@ -109,4 +111,18 @@ model CommentLike {
   @@unique([commentId, userId])
   @@index([userId])
   @@map("comment_likes")
+}
+
+model Follow {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  follower    User     @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  followerId  String   @db.ObjectId
+  following   User     @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+  followingId String   @db.ObjectId
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("follows")
 }
