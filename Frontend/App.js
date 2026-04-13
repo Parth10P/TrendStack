@@ -1,7 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet } from "react-native";
 import React, { useState } from "react";
-import { Provider as PaperProvider } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -33,48 +31,39 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <PaperProvider>
-          <NavigationContainer>
-            <StatusBar style="auto" />
-            <Stack.Navigator screenOptions={{ headerShown: false }}>
-              {!isSignedIn ? (
-                <Stack.Screen name="Login">
+        <NavigationContainer>
+          <StatusBar style="auto" />
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            {!isSignedIn ? (
+              <Stack.Screen name="Login">
+                {(props) => (
+                  <Login {...props} onSignInSuccess={handleSignInSuccess} />
+                )}
+              </Stack.Screen>
+            ) : (
+              <>
+                <Stack.Screen name="Home">
                   {(props) => (
-                    <Login {...props} onSignInSuccess={handleSignInSuccess} />
+                    <Home {...props} user={user} onLogout={handleLogout} />
                   )}
                 </Stack.Screen>
-              ) : (
-                <>
-                  <Stack.Screen name="Home">
-                    {(props) => (
-                      <Home {...props} user={user} onLogout={handleLogout} />
-                    )}
-                  </Stack.Screen>
-                  <Stack.Screen name="Profile">
-                    {(props) => (
-                      <ProfileScreen
-                        {...props}
-                        user={user}
-                        onLogout={handleLogout}
-                      />
-                    )}
-                  </Stack.Screen>
-                  <Stack.Screen name="Search" component={Search} />
-                  <Stack.Screen name="UserProfile" component={UserProfileScreen} />
-                  <Stack.Screen name="PostDetails" component={PostDetailsScreen} />
-                </>
-              )}
-            </Stack.Navigator>
-          </NavigationContainer>
-        </PaperProvider>
+                <Stack.Screen name="Profile">
+                  {(props) => (
+                    <ProfileScreen
+                      {...props}
+                      user={user}
+                      onLogout={handleLogout}
+                    />
+                  )}
+                </Stack.Screen>
+                <Stack.Screen name="Search" component={Search} />
+                <Stack.Screen name="UserProfile" component={UserProfileScreen} />
+                <Stack.Screen name="PostDetails" component={PostDetailsScreen} />
+              </>
+            )}
+          </Stack.Navigator>
+        </NavigationContainer>
       </ThemeProvider>
     </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f6f7fb",
-  },
-});

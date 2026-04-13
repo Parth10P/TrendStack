@@ -10,7 +10,6 @@ import {
   Platform,
   Image,
   ActivityIndicator,
-  Dimensions,
   SafeAreaView,
   ScrollView,
 } from "react-native";
@@ -113,23 +112,6 @@ export default function Login({ onSignInSuccess }) {
         "Sign Up Failed",
         error.message || "Unable to create account"
       );
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleGoogleSignIn() {
-    console.log(" google login");
-    try {
-      setLoading(true);
-      const userInfo = {
-        user: { name: "Google User", email: "user@google.com" },
-        provider: "google",
-      };
-      if (onSignInSuccess) onSignInSuccess(userInfo);
-    } catch (err) {
-      console.log("Google sign in error", err);
-      Alert.alert("Google Sign In", "Unable to sign in with Google");
     } finally {
       setLoading(false);
     }
@@ -409,54 +391,6 @@ export default function Login({ onSignInSuccess }) {
                       <Text style={styles.primaryButtonText}>Login</Text>
                     )}
                   </TouchableOpacity>
-
-                  <View style={styles.dividerContainer}>
-                    <View
-                      style={[
-                        styles.dividerLine,
-                        { backgroundColor: theme.border },
-                      ]}
-                    />
-                    <Text
-                      style={[
-                        styles.dividerText,
-                        { color: theme.textSecondary },
-                      ]}
-                    >
-                      or continue with
-                    </Text>
-                    <View
-                      style={[
-                        styles.dividerLine,
-                        { backgroundColor: theme.border },
-                      ]}
-                    />
-                  </View>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.socialButton,
-                      {
-                        borderColor: theme.border,
-                        backgroundColor: theme.surface,
-                      },
-                    ]}
-                    onPress={handleGoogleSignIn}
-                    disabled={loading}
-                  >
-                    <Image
-                      source={{
-                        uri: "https://developers.google.com/identity/images/g-logo.png",
-                      }}
-                      style={styles.socialIcon}
-                      resizeMode="contain"
-                    />
-                    <Text
-                      style={[styles.socialButtonText, { color: theme.text }]}
-                    >
-                      Google
-                    </Text>
-                  </TouchableOpacity>
                 </>
               )}
             </BlurView>
@@ -466,8 +400,6 @@ export default function Login({ onSignInSuccess }) {
     </View>
   );
 }
-
-const { width } = Dimensions.get("window");
 
 const styles = StyleSheet.create({
   container: {
@@ -614,34 +546,4 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    paddingHorizontal: 16,
-    fontSize: 14,
-  },
-  socialButton: {
-    flexDirection: "row",
-    height: 56,
-    borderRadius: 14,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  socialIcon: {
-    width: 24,
-    height: 24,
-    marginRight: 10,
-  },
-  socialButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
 });
